@@ -218,6 +218,9 @@ body.locked{overflow:hidden}
 .gate textarea{font-family:ui-monospace,Menlo,monospace;font-size:13px}
 .updbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom));z-index:85;background:var(--navy);color:#fff;border-radius:12px;padding:10px 12px 10px 16px;display:flex;gap:12px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,.3);font-size:.9rem;width:max-content;max-width:calc(100vw - 24px)}
 .side .foot a{color:var(--teal);text-decoration:none;display:block;padding:5px 0;font-weight:500}
+input[type=date],input[type=month]{-webkit-appearance:none;appearance:none;display:block;max-width:100%;min-width:0;text-align:left;line-height:40px}
+input[type=date]::-webkit-date-and-time-value,input[type=month]::-webkit-date-and-time-value{text-align:left;margin:0}
+.filters .fld{min-width:0}
 /* Responsive */
 @media (max-width:1100px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.formgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:1023px){
@@ -473,7 +476,7 @@ $('#mX').onclick=closeModal;$('#modal').addEventListener('click',e=>{if(e.target
 function confirmar(title,msg,okText,fn){openModal(title,`<p style="margin:0">${msg}</p>`,[{t:'Cancelar',c:'sec'},{t:okText,c:'dan',fn}])}
 
 /* ============ Datos: GitHub cifrado + firmas digitales ============ */
-const APP_VER='2026.11.10-1';
+const APP_VER='2026.11.10-3';
 const DEF_REPO={o:'jesiahm2324-gif',rp:'control-dragado-apbb'};
 const APP_URL=(location.protocol==='https:'?location.origin+location.pathname.replace(/index\.html$/,''):`https://${DEF_REPO.o}.github.io/${DEF_REPO.rp}/`);
 const IOS=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
@@ -520,7 +523,7 @@ async function rebuild(){const root=S.acc.rk;
   const list=[];for(const r of RECS.values()){if(!r.env)continue;let P;try{P=JSON.parse(r.env.p)}catch(e){continue}if(!P||!P.t||!P.id||!P.ts)continue;list.push({r,P})}
   list.sort((a,b)=>a.P.ts<b.P.ts?-1:a.P.ts>b.P.ts?1:(a.r.n>0&&b.r.n>0?a.r.n-b.r.n:(a.r.n>0?-1:b.r.n>0?1:a.r.n-b.r.n)));
   // 1) usuarios: solo con la firma raíz del administrador
-  const users={},st={op:{},draga:{},proy:{},usuario:{}},hist=[],seen=new Set();
+  const users={},st={op:{},draga:{},proy:{},usuario:{},cfg:{}},hist=[],seen=new Set();
   for(const {r,P} of list){if(P.t!=='usuario'||r.env.k!=='root')continue;if(!(await ver(r,root,'root')))continue;const d=P.d||{};
     if(!users[P.id]){if(!d.pub)continue;users[P.id]={pub:d.pub,h:[]}}users[P.id].h.push({ts:P.ts,rol:d.rol,activo:d.activo!==false});
     const prev=st.usuario[P.id];st.usuario[P.id]=Object.assign({},d,{creado:prev?prev.creado:P.ts,_ts:P.ts});delete st.usuario[P.id].pub;
@@ -529,6 +532,7 @@ async function rebuild(){const root=S.acc.rk;
   for(const {r,P} of list){if(P.t==='usuario')continue;const k=r.env.k;let pub,rol,activo;
     if(k==='root'){pub=root;rol='admin';activo=true}else{const u=users[k];if(!u)continue;pub=u.pub;const h=u.h.filter(x=>x.ts<=P.ts).pop()||u.h[0];rol=h.rol;activo=h.activo}
     if(!activo||!(rol==='admin'||rol==='operador'))continue;if(!(await ver(r,pub,k)))continue;
+    if(P.t==='cfg'){if(rol!=='admin')continue;st.cfg[P.id]=P.d||{};hist.push({t:P.ts,uid:P.au,accion:'Configuró llave de operadores',detalle:'Llave de GitHub para operadores y consulta actualizada',pend:!!r.pend});continue}
     if(P.t==='draga'||P.t==='proy'){if(rol!=='admin')continue;const prev=st[P.t][P.id];st[P.t][P.id]=Object.assign({},P.d,{_ts:P.ts});const nm=P.d&&P.d.nombre||'';
       let det=nm;if(prev&&prev.nombre!==nm)det+=` (antes: ${prev.nombre})`;if(P.t==='proy'&&prev&&+prev.ancho!==+P.d.ancho)det+=` · ancho ${fmt(prev.ancho)} → ${fmt(P.d.ancho)} m`;
       hist.push({t:P.ts,uid:P.au,accion:(prev?(P.t==='draga'&&prev.activa!==P.d.activa?(P.d.activa===false?'Desactivó':'Activó'):'Modificó'):'Creó')+(P.t==='draga'?' draga':' proyecto'),detalle:det,pend:!!r.pend})}
@@ -537,7 +541,7 @@ async function rebuild(){const root=S.acc.rk;
       const d=Object.assign({},P.d,{id:P.id});if(rol!=='admin'){d.creadoPor=k}st.op[P.id]=d;
       if(!prev)hist.push({t:P.ts,uid:P.au,accion:'Creó operación',detalle:`${fCorta(d.fecha)} · ${d.dragaNombre||''} · ${d.proyectoNombre||''} · ${fmt(d.volumen)} m³`,pend:!!r.pend});
       else{const c=Object.keys(CAMPOS).filter(f=>String(prev[f]??'')!==String(d[f]??'')).map(f=>`${CAMPOS[f]}: ${prev[f]??''} → ${d[f]??''}`);hist.push({t:P.ts,uid:P.au,accion:'Modificó operación',detalle:`${fCorta(d.fecha)} · ${d.dragaNombre||''} · ${c.join('; ')||'sin cambios'}`,pend:!!r.pend})}}}
-  S.dragas=st.draga;S.proyectos=st.proy;S.usuarios=st.usuario;S.hist=hist.sort((a,b)=>a.t<b.t?1:a.t>b.t?-1:0);S.nRecs=[...RECS.values()].filter(r=>r.n>0).length;
+  S.dragas=st.draga;S.proyectos=st.proy;S.usuarios=st.usuario;S.cfg=st.cfg.tokens||{};S.hist=hist.sort((a,b)=>a.t<b.t?1:a.t>b.t?-1:0);S.nRecs=[...RECS.values()].filter(r=>r.n>0).length;
   const out=Object.values(st.op).map(o=>Object.assign({},o,{_owner:'x',_bucket:'x'}));out.sort((a,b)=>a.fecha<b.fecha?1:a.fecha>b.fecha?-1:String(b.creadoEn||'').localeCompare(String(a.creadoEn||'')));S.ops=out;
   const me=st.usuario[S.uid];if(me&&me.activo===false){fatal('Su usuario fue desactivado por el administrador del sistema.');S.bloqueado=true}}
 async function saveRecord(t,id,a,d){if(!S.acc||!S.acc.sk)throw new Error('Su usuario no tiene permiso para registrar información.');
@@ -547,7 +551,7 @@ async function saveRecord(t,id,a,d){if(!S.acc||!S.acc.sk)throw new Error('Su usu
 let flushing=null;
 function flush(){if(flushing)return flushing;flushing=Promise.resolve().then(async()=>{try{while(S.pend.length&&navigator.onLine!==false){const x=S.pend[0];setSync('Enviando a GitHub…');
     const it=await gh('/issues',{method:'POST',body:JSON.stringify({title:'DRG registro',body:x.body})});RECS.delete(x.n);const r={n:it.number,body:x.body,env:x.env,upd:it.updated_at,v:x.v};RECS.set(r.n,r);await IDB.put(r);S.pend.shift();await savePend()}
-    S.syncErr=null}catch(e){S.syncErr=e}finally{flushing=null;setSync();schedule();if(S.pend.length&&!S.syncErr&&navigator.onLine!==false)setTimeout(flush,50)}});return flushing}
+    S.syncErr=null;await rebuild()}catch(e){S.syncErr=e}finally{flushing=null;setSync();schedule();if(S.pend.length&&!S.syncErr&&navigator.onLine!==false)setTimeout(flush,50)}});return flushing}
 let pulling=null;
 function pull(){if(pulling)return pulling;pulling=Promise.resolve().then(async()=>{try{let page=1,max=S.since,ch=false;
     for(;;){const q=`/issues?state=all&per_page=100&sort=updated&direction=asc&page=${page}${S.since?'&since='+encodeURIComponent(S.since):''}`;const l=await gh(q);
@@ -917,7 +921,8 @@ function renderUsers(){const us=Object.entries(S.usuarios);
   $('#userTable').innerHTML=us.length?`<div class="tw desk"><table><thead><tr><th>Usuario</th><th>Rol</th><th>Creado</th><th class="n">Registros creados</th><th>Estado</th><th></th></tr></thead><tbody>${us.sort((a,b)=>String(a[1].nombre).localeCompare(b[1].nombre)).map(([id,u])=>{const act=u.activo!==false;const n=S.ops.filter(o=>o.creadoPor===id).length;
     return`<tr><td><b>${esc(u.nombre)}</b>${id===S.uid?' <span class="badge b-info">usted</span>':''}</td><td>${esc(ROLN[u.rol]||'—')}</td><td>${fDT(u.creado)}</td><td class="n">${n}</td><td><span class="badge ${act?'b-ok':'b-bad'}">${act?'Activo':'Desactivado'}</span></td><td style="white-space:nowrap">${id===S.uid?'':`<button class="btn sec sm" data-tgu="${esc(id)}">${act?'Desactivar':'Activar'}</button> ${act?`<button class="btn sec sm" data-rep="${esc(id)}">Reemplazar código</button>`:''}`}</td></tr>`}).join('')}</tbody></table></div>
     <div class="rcards">${us.map(([id,u])=>{const act=u.activo!==false;return`<div class="rc"><div class="top"><div><b>${esc(u.nombre)}</b><div class="meta">${esc(ROLN[u.rol]||'')} · desde ${fCorta((u.creado||'').slice(0,10))}</div></div><span class="badge ${act?'b-ok':'b-bad'}">${act?'Activo':'Desactivado'}</span></div>${id===S.uid?'':`<div class="acts"><button class="btn sec sm" data-tgu="${esc(id)}">${act?'Desactivar':'Activar'}</button>${act?`<button class="btn sec sm" data-rep="${esc(id)}">Reemplazar código</button>`:''}</div>`}</div>`}).join('')}</div>`:'<div class="empty">Aún no hay usuarios.</div>';
-  $('#ghInfo').innerHTML=`<dl class="dl"><dt>Repositorio</dt><dd><a href="https://github.com/${esc(S.acc.o)}/${esc(S.acc.rp)}" target="_blank" rel="noopener">${esc(S.acc.o)}/${esc(S.acc.rp)}</a></dd><dt>Registros guardados</dt><dd>${S.nRecs}</dd><dt>Pendientes de enviar</dt><dd>${S.pend.length}</dd><dt>Última sincronización</dt><dd>${S.lastSync?fDT(S.lastSync):'—'}</dd><dt>Estado</dt><dd>${S.syncErr?`<span style="color:var(--bad)">${esc(errMsg(S.syncErr))}</span>`:'Conectado'}</dd><dt>Versión de la App</dt><dd>${APP_VER}</dd></dl>`;
+  $('#ghInfo').innerHTML=`<dl class="dl"><dt>Repositorio</dt><dd><a href="https://github.com/${esc(S.acc.o)}/${esc(S.acc.rp)}" target="_blank" rel="noopener">${esc(S.acc.o)}/${esc(S.acc.rp)}</a></dd><dt>Registros guardados</dt><dd>${S.nRecs}</dd><dt>Pendientes de enviar</dt><dd>${S.pend.length}</dd><dt>Última sincronización</dt><dd>${S.lastSync?fDT(S.lastSync):'—'}</dd><dt>Estado</dt><dd>${S.syncErr?`<span style="color:var(--bad)">${esc(errMsg(S.syncErr))}</span>`:'Conectado'}</dd><dt>Llave de operadores</dt><dd>${S.cfg.tOp?'Configurada':'<span style="color:var(--warn)">No configurada</span>'} · <a href="#" id="setTop">${S.cfg.tOp?'Cambiar':'Configurar'}</a></dd><dt>Versión de la App</dt><dd>${APP_VER}</dd></dl>`;
+  $('#setTop').onclick=e=>{e.preventDefault();openModal('Llave de GitHub para operadores',`<div class="fld" data-f="ctop"><label>Llave fine-grained (solo Issues de ${esc(S.acc.rp)})</label><input type="password" id="cTop" placeholder="github_pat_…" autocapitalize="off" autocomplete="off"><span class="emsg"></span></div><p class="note">Los códigos que se generen a partir de ahora usarán esta llave. Los códigos ya entregados siguen con la llave anterior hasta que se reemplacen.</p>`,[{t:'Cancelar',c:'sec'},{t:'Guardar',c:'pri',fn:async()=>{const ok=await guardarLlaveOp($('#cTop').value.trim(),'ctop');if(!ok)return false;renderUsers()}}])};
   renderAudit()}
 function renderAudit(){const q=($('#auQ').value||'').toLowerCase();const l=(S.hist||[]).filter(x=>!q||[nombre(x.uid),x.accion,x.detalle].join(' ').toLowerCase().includes(q));
   $('#auTbl').innerHTML=l.length?`<div class="tw" style="max-height:480px;overflow:auto"><table><thead><tr><th>Fecha y hora</th><th>Usuario</th><th>Acción</th><th>Detalle</th></tr></thead><tbody>${l.slice(0,800).map(x=>`<tr><td style="white-space:nowrap">${fDT(x.t)}${x.pend?' <span class="badge b-warn">pendiente</span>':''}</td><td>${esc(nombre(x.uid))}</td><td><span class="badge ${/Elimin|Desactiv/.test(x.accion)?'b-bad':/Modific/.test(x.accion)?'b-warn':'b-info'}">${esc(x.accion)}</span></td><td style="white-space:pre-wrap">${esc(x.detalle||'')}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Sin eventos.</div>'}
@@ -931,13 +936,18 @@ $('#userTable').onclick=e=>{const b=e.target.closest('[data-tgu],[data-rep]');if
 $('#addUser').onclick=()=>{openModal('Agregar usuario',`<div class="formgrid" style="grid-template-columns:1fr">
   <div class="fld" data-f="unom"><label class="req">Nombre y apellido (usuario)</label><input type="text" id="uNom" maxlength="80"><span class="emsg"></span></div>
   <div class="fld"><label class="req">Tipo de usuario</label><select id="uRol"><option value="operador">Operador · registra operaciones y consulta</option><option value="admin">Administrador · acceso completo</option><option value="consulta">Consulta · solo lectura (Gerencia)</option></select></div>
+  <div class="fld hidden" data-f="utop" id="uTopW"><label class="req">Llave de GitHub para operadores</label><input type="password" id="uTop" placeholder="github_pat_…" autocapitalize="off" autocomplete="off"><span class="hint">Llave <b>fine-grained</b> solo para el repositorio de la App, con permiso de Issues (lectura y escritura). Se configura una sola vez y la usan todos los operadores y usuarios de consulta. Su llave de administrador nunca se entrega a ellos.</span><span class="emsg"></span></div>
   <p class="note" style="margin:0">Se generará un código de acceso personal. La persona lo pegará en la App y creará su propia contraseña.</p></div>`,
   [{t:'Cancelar',c:'sec'},{t:'Generar código',c:'pri',fn:async()=>{const n=$('#uNom').value.trim();if(n.length<3){setErr('unom','Escriba el nombre completo.');return false}
     if(Object.values(S.usuarios).some(u=>u.activo!==false&&String(u.nombre).toLowerCase()===n.toLowerCase())){setErr('unom','Ya existe un usuario activo con ese nombre.');return false}
-    const r=$('#uRol').value;setTimeout(()=>crearUsuario(n,r),50)}}])};
+    const r=$('#uRol').value;if(r!=='admin'&&!S.cfg.tOp){const ok=await guardarLlaveOp($('#uTop').value.trim(),'utop');if(!ok)return false}setTimeout(()=>crearUsuario(n,r),50)}}]);
+  const syncTop=()=>$('#uTopW').classList.toggle('hidden',$('#uRol').value==='admin'||!!S.cfg.tOp);$('#uRol').addEventListener('change',syncTop);syncTop()};
+async function guardarLlaveOp(t,f){setErr(f,'');if(t.length<20){setErr(f,'Pegue la llave completa.');return false}if(t===S.acc.t){setErr(f,'Debe ser una llave distinta a la suya de administrador.');return false}
+  try{await ghReq({o:S.acc.o,rp:S.acc.rp,t},'/issues?per_page=1')}catch(e){setErr(f,e.status===401?'La llave no es válida.':e.status===404||e.status===403?'La llave no tiene acceso a los Issues de '+S.acc.rp+'.':errMsg(e));return false}
+  await saveRecord('cfg','tokens','set',{tOp:t,actualizado:new Date().toISOString()});toast('Llave de operadores guardada','ok');return true}
 async function crearUsuario(nombreU,rol){try{const u=rid('u_');let acc;
   if(rol==='admin'){acc=Object.assign({},S.acc,{u,n:nombreU,r:'admin'});await saveRecord('usuario',u,'set',{nombre:nombreU,rol,activo:true,pub:S.acc.rk})}
-  else{const kp=await genPair();acc={v:1,u,n:nombreU,r:rol,sk:rol==='consulta'?null:kp.priv,kid:rol==='consulta'?null:u,rk:S.acc.rk,dk:S.acc.dk,t:S.acc.t,o:S.acc.o,rp:S.acc.rp};await saveRecord('usuario',u,'set',{nombre:nombreU,rol,activo:true,pub:kp.pub})}
+  else{const kp=await genPair();if(!S.cfg.tOp)throw new Error('Primero configure la llave de GitHub para operadores.');acc={v:1,u,n:nombreU,r:rol,sk:rol==='consulta'?null:kp.priv,kid:rol==='consulta'?null:u,rk:S.acc.rk,dk:S.acc.dk,t:S.cfg.tOp,o:S.acc.o,rp:S.acc.rp};await saveRecord('usuario',u,'set',{nombre:nombreU,rol,activo:true,pub:kp.pub})}
   showCode(`Código de acceso de ${nombreU}`,codeOf(acc),nombreU,false)}catch(e){toast(errMsg(e),'bad')}}
 function showCode(title,code,quien,propio){const txt=`Control de Operaciones de Dragado – APBB\n1) Abra e instale la App: ${APP_URL}\n2) Pegue este código de acceso y cree su contraseña:\n\n${code}`;
   openModal(title,`<p class="note" style="margin-top:0">${propio?'<b>Guarde este código en un lugar seguro</b> (por ejemplo, en sus notas privadas). Lo necesita para entrar desde otro teléfono o computadora. Quien lo tenga tiene acceso de administrador.':`Entregue este código <b>de forma privada</b> a ${esc(quien)} (por WhatsApp directo, no en grupos). <b>Por seguridad no se vuelve a mostrar.</b>`}</p>
@@ -977,12 +987,12 @@ function gateCode(back){gate(`<h2>Primer ingreso</h2><p class="gp">Pegue el cód
   <div class="glinks">${back?'<a href="#" id="gBack">← Volver a iniciar sesión</a>':''}<a href="#" id="gSetup">Configuración inicial del sistema (solo la primera vez)</a></div>${installHint()}`);
   $('#gF').onsubmit=async e=>{e.preventDefault();gErr();let acc;try{acc=parseCode($('#gC').value)}catch(x){gErr(x.message);return}const p1=$('#gP1').value,p2=$('#gP2').value;
     if(p1.length<8){gErr('La contraseña debe tener al menos 8 caracteres.');return}if(p1!==p2){gErr('Las contraseñas no coinciden.');return}
-    const b=$('#gB');busy(b,true,'Preparando…');try{const prev=localStorage.getItem('drg_vault');if(prev){const pv=JSON.parse(prev);if(pv.u!==acc.u||true){await IDB.clear()}}await vaultSave(acc,p1);await unlock(acc,true)}catch(x){gErr(errMsg(x));busy(b,false,'Entrar')}};
+    const b=$('#gB');busy(b,true,'Preparando…');try{const prev=localStorage.getItem('drg_vault');if(prev){const pv=JSON.parse(prev);if(pv.u!==acc.u){await IDB.clear()}}else{const pd=await IDB.get('pend');if(!pd||!pd.length)await IDB.clear()}await vaultSave(acc,p1);await unlock(acc,true)}catch(x){gErr(errMsg(x));busy(b,false,'Entrar')}};
   if(back)$('#gBack').onclick=e=>{e.preventDefault();gateLogin()};$('#gSetup').onclick=e=>{e.preventDefault();gateSetup()}}
 function gateSetup(){gate(`<h2>Configuración inicial</h2><p class="gp">Solo la realiza el administrador una vez. Necesita la llave de GitHub creada para el repositorio (vea la guía de instalación).</p>
   <form id="gF"><div class="fld"><label for="sN">Su nombre (administrador)</label><input type="text" id="sN" maxlength="80"></div>
   <div class="frow"><div class="fld"><label for="sO">Cuenta de GitHub</label><input type="text" id="sO" value="${DEF_REPO.o}" autocapitalize="off"></div><div class="fld"><label for="sR">Repositorio</label><input type="text" id="sR" value="${DEF_REPO.rp}" autocapitalize="off"></div></div>
-  <div class="fld"><label for="sT">Llave de GitHub (token con permiso de Issues)</label><input type="password" id="sT" placeholder="github_pat_…" autocapitalize="off" autocomplete="off"><a class="hint" href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Crear llave en GitHub →</a></div>
+  <div class="fld"><label for="sT">Su llave de GitHub de administrador</label><input type="password" id="sT" placeholder="github_pat_…" autocapitalize="off" autocomplete="off"><a class="hint" href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Crear llave en GitHub →</a></div>
   <div class="fld"><label for="gP1">Cree su contraseña (mínimo 8 caracteres)</label><input type="password" id="gP1" autocomplete="new-password"></div>
   <div class="fld"><label for="gP2">Repita la contraseña</label><input type="password" id="gP2" autocomplete="new-password"></div><div class="gerr" id="gE"></div>
   <button class="btn pri wide" id="gB">Configurar sistema</button></form><div class="glinks"><a href="#" id="gBack">← Tengo un código de acceso</a></div>`);

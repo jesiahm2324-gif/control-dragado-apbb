@@ -1,5 +1,5 @@
 /* Service worker – Control de Operaciones de Dragado APBB */
-const V='dragado-apbb-2026.11.10-2';
+const V='dragado-apbb-2026.11.10-4';
 const SHELL=['./','index.html','manifest.webmanifest','rama-kay.jpg','icono-64.png','icono-180.png','icono-192.png','icono-512.png','icono-maskable-512.png'];
 const CDN=['https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js','https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js','https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js','https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(V).then(c=>c.addAll(SHELL).then(()=>Promise.all(CDN.map(u=>fetch(u,{mode:'no-cors'}).then(r=>c.put(u,r)).catch(()=>{}))))))});
