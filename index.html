@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Control de Dragado · APBB</title>
+<meta name="theme-color" content="#0b2e4f">
+<meta name="description" content="Sistema de Control de Operaciones de Dragado – Administración Portuaria Bluff, Bluefields, Nicaragua">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dragado APBB">
+<link rel="icon" type="image/png" href="icono-64.png">
+<link rel="apple-touch-icon" href="icono-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@600;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root{
+  color-scheme:light;
+  --navy:#0b2e4f;--navy-2:#123d66;--teal:#0f7c8c;--teal-soft:#e3f2f4;
+  --bg:#f3f5f7;--surface:#ffffff;--line:#dde3e9;--line-2:#eef1f4;
+  --ink:#0f1b26;--ink-2:#4a5866;--ink-3:#7a8794;
+  --ok:#1b7f3b;--ok-soft:#e5f4ea;--warn:#a66300;--warn-soft:#fdf1dc;--bad:#b42318;--bad-soft:#fdeceb;
+  --s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;
+  --r:10px;--sh:0 1px 2px rgba(15,27,38,.06),0 2px 8px rgba(15,27,38,.04);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.45;-webkit-text-size-adjust:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+.num,td.n,th.n{font-variant-numeric:tabular-nums}
+h1,h2,h3{margin:0;font-weight:600;letter-spacing:-.01em}
+h1{font-size:1.45rem}h2{font-size:1.05rem}h3{font-size:.95rem}
+a{color:var(--teal)}
+.hidden{display:none!important}
+
+/* Layout */
+.topbar{position:sticky;top:0;z-index:30;height:58px;background:var(--navy);color:#fff;display:flex;align-items:center;gap:12px;padding:0 16px;box-shadow:0 1px 0 rgba(0,0,0,.2)}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand svg{flex:none}
+.brand .t1{font-family:"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif;font-weight:700;letter-spacing:.04em;font-size:.82rem;text-transform:uppercase;opacity:.85;white-space:nowrap}
+.brand .t2{font-weight:600;font-size:.98rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar .sp{flex:1}
+.userchip{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border-radius:999px;padding:4px 10px 4px 4px;font-size:.85rem;max-width:46vw}
+.userchip img{width:26px;height:26px;border-radius:50%}
+.userchip .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rolebadge{font-size:.7rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;background:var(--teal);padding:2px 7px;border-radius:999px;white-space:nowrap}
+.menubtn{display:none;background:none;border:0;color:#fff;padding:8px;margin-left:-8px;cursor:pointer}
+.shell{display:flex;min-height:calc(100vh - 58px)}
+.side{width:236px;flex:none;background:var(--surface);border-right:1px solid var(--line);padding:14px 10px;position:sticky;top:58px;height:calc(100vh - 58px);overflow:auto}
+.side a{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:8px;color:var(--ink-2);text-decoration:none;font-weight:500;margin-bottom:2px}
+.side a svg{flex:none;opacity:.8}
+.side a:hover{background:var(--line-2);color:var(--ink)}
+.side a.on{background:var(--teal-soft);color:var(--navy);font-weight:600}
+.side .sec{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);font-weight:600;padding:14px 12px 6px}
+.side .foot{font-size:.75rem;color:var(--ink-3);padding:16px 12px 4px;border-top:1px solid var(--line-2);margin-top:16px}
+main{flex:1;min-width:0;padding:22px 26px 40px;max-width:1360px}
+.pagehead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.pagehead .sub{color:var(--ink-2);margin:4px 0 0;font-size:.9rem}
+.bottomnav{display:none}
+.scrim{display:none}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:16px 18px;margin-bottom:16px}
+.card>.ch{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.card .note{color:var(--ink-2);font-size:.85rem}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.grid2>.card{margin-bottom:0}
+.gapb{margin-bottom:16px}
+
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;box-shadow:var(--sh)}
+.kpi .l{font-size:.78rem;color:var(--ink-2);font-weight:500}
+.kpi .v{font-size:1.5rem;font-weight:600;margin-top:4px;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.kpi .v small{font-size:.8rem;font-weight:500;color:var(--ink-2);margin-left:3px}
+.kpi.hero{background:var(--navy);border-color:var(--navy);color:#fff}
+.kpi.hero .l,.kpi.hero .v small{color:rgba(255,255,255,.75)}
+
+/* Forms */
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.fld{display:flex;flex-direction:column;gap:5px;min-width:0}
+.fld>label,.lbl{font-size:.8rem;font-weight:600;color:var(--ink-2)}
+.fld .hint{font-size:.76rem;color:var(--ink-3)}
+.req::after{content:" *";color:var(--bad)}
+input[type=text],input[type=password],input[type=date],input[type=month],input[type=number],select,textarea{height:42px;border:1px solid #c9d2db;border-radius:8px;padding:0 11px;background:#fff;font-size:16px;min-width:0;width:100%}
+textarea{height:auto;min-height:92px;padding:10px 11px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--teal);outline-offset:0;border-color:var(--teal)}
+input[readonly]{background:var(--line-2);color:var(--ink-2)}
+.fld.err input,.fld.err select,.fld.err textarea{border-color:var(--bad);background:#fffafa}
+.fld .emsg{font-size:.76rem;color:var(--bad);display:none}
+.fld.err .emsg{display:block}
+.formgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.span2{grid-column:span 2}.span4{grid-column:1/-1}
+.fsec{font-size:.78rem;text-transform:uppercase;letter-spacing:.07em;color:var(--teal);font-weight:700;margin:4px 0 12px;display:flex;align-items:center;gap:8px}
+.fsec::after{content:"";flex:1;height:1px;background:var(--line)}
+.calc{background:var(--teal-soft);border:1px solid #bfe0e5;border-radius:var(--r);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.calc .big{font-size:1.9rem;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.calc .big small{font-size:1rem;font-weight:600;margin-left:4px}
+.calc .formula{font-size:.88rem;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 11px;font-size:.8rem;cursor:pointer;color:var(--ink-2)}
+.chip:hover{border-color:var(--teal);color:var(--teal)}
+.chk{display:flex;align-items:center;gap:8px;font-size:.88rem;cursor:pointer}
+.chk input{width:18px;height:18px}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:42px;padding:0 16px;border-radius:8px;border:1px solid transparent;font-weight:600;cursor:pointer;white-space:nowrap;font-size:.92rem;text-decoration:none}
+.btn.pri{background:var(--navy);color:#fff}.btn.pri:hover{background:var(--navy-2)}
+.btn.acc{background:var(--teal);color:#fff}
+.btn.sec{background:#fff;border-color:#c9d2db;color:var(--ink)}.btn.sec:hover{border-color:var(--ink-3)}
+.btn.dan{background:var(--bad);color:#fff}
+.btn.ghost{background:none;color:var(--teal);padding:0 8px}
+.btn.sm{height:34px;padding:0 11px;font-size:.84rem}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+/* Tables */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:.85rem}
+th{background:#f6f8fa;color:var(--ink-2);font-weight:600;text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap;position:sticky;top:0}
+td{padding:8px 10px;border-bottom:1px solid var(--line-2);vertical-align:top}
+tr:last-child td{border-bottom:0}
+td.n,th.n{text-align:right;white-space:nowrap}
+tr.tot td{font-weight:700;background:#f6f8fa;border-top:1px solid var(--line)}
+tr.vac td{color:var(--ink-3);font-style:italic;background:repeating-linear-gradient(135deg,#fafbfc 0 6px,#f3f5f7 6px 12px)}
+tr.zero td.vol{color:var(--warn);font-weight:600}
+tbody tr.click{cursor:pointer}tbody tr.click:hover td{background:#f8fbfc}
+td .obs{max-width:280px;color:var(--ink-2);white-space:pre-wrap}
+.badge{display:inline-block;font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.b-ok{background:var(--ok-soft);color:var(--ok)}.b-off{background:#eceff2;color:var(--ink-2)}.b-warn{background:var(--warn-soft);color:var(--warn)}.b-bad{background:var(--bad-soft);color:var(--bad)}.b-info{background:var(--teal-soft);color:var(--teal)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:baseline}
+.empty{text-align:center;color:var(--ink-3);padding:28px 10px}
+
+/* Record cards (mobile) */
+.rcards{display:none}
+.rc{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px;background:#fff}
+.rc .top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.rc .vol{font-size:1.15rem;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums;white-space:nowrap}
+.rc .meta{font-size:.8rem;color:var(--ink-2)}
+.rc .row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px;font-size:.8rem}
+.rc .row b{display:block;font-size:.9rem;font-variant-numeric:tabular-nums}
+.rc .acts{display:flex;gap:6px;margin-top:10px}
+
+/* Charts */
+.chartbox{position:relative;height:280px}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:.8rem;color:var(--ink-2);margin-bottom:8px}
+.callout{background:var(--warn-soft);border-radius:8px;padding:9px 12px;font-size:.86rem;margin-bottom:10px;color:#6b4100}
+.callout b{color:#4d2f00}
+.info{background:var(--teal-soft);border-radius:8px;padding:10px 13px;font-size:.86rem;color:#0b4a54}
+
+/* Catalog cards */
+.catgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.cat{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:16px;box-shadow:var(--sh);display:flex;flex-direction:column;gap:10px}
+.cat .hd{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.cat .nm{font-weight:600;font-size:1.05rem}
+.cat .sub{color:var(--ink-2);font-size:.85rem}
+.cat dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0;font-size:.85rem}
+.cat dt{color:var(--ink-3)}.cat dd{margin:0;font-variant-numeric:tabular-nums}
+.cat .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto}
+
+/* Report */
+.rephead{border-left:4px solid var(--navy);padding:4px 0 4px 14px;margin-bottom:14px}
+.rephead .org{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);font-weight:700}
+.rephead h2{font-size:1.25rem;margin:2px 0}
+.rephead .meta{font-size:.86rem;color:var(--ink-2)}
+.tabtitle{font-weight:600;margin:18px 0 8px;font-size:.95rem}
+
+/* Modal, toast, banner */
+.modal{position:fixed;inset:0;z-index:60;background:rgba(10,20,30,.45);display:flex;align-items:center;justify-content:center;padding:16px}
+.mbox{background:#fff;border-radius:12px;width:100%;max-width:640px;max-height:calc(100vh - 32px);display:flex;flex-direction:column;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+.mbox .mh{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px}
+.mbox .mb{padding:18px 20px;overflow:auto}
+.mbox .mf{padding:12px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.xbtn{background:none;border:0;font-size:1.5rem;line-height:1;cursor:pointer;color:var(--ink-3);padding:4px 8px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:80;background:var(--ink);color:#fff;padding:11px 18px;border-radius:10px;font-size:.9rem;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:calc(100vw - 32px);opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.on{opacity:1}.toast.bad{background:var(--bad)}.toast.ok{background:var(--ok)}
+.banner{background:var(--warn-soft);color:#6b4100;padding:10px 16px;font-size:.88rem;border-bottom:1px solid #f1d9ad}
+.fatal{max-width:560px;margin:60px auto;text-align:center;padding:0 16px}
+.fatal h2{margin-bottom:8px}
+.dl{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;margin:0;font-size:.9rem}
+.dl dt{color:var(--ink-3)}.dl dd{margin:0;font-variant-numeric:tabular-nums}
+.loading{color:var(--ink-3);padding:30px;text-align:center}
+
+.logo{width:36px;height:36px;border-radius:9px;object-fit:cover;flex:none;box-shadow:0 0 0 2px rgba(255,255,255,.25)}
+.portada{position:relative;border-radius:var(--r);overflow:hidden;margin-bottom:16px;min-height:190px;background:#0b2e4f url(rama-kay.jpg) center 55%/cover no-repeat;display:flex;align-items:flex-end;box-shadow:var(--sh)}
+.portada::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(11,46,79,.92) 0%,rgba(11,46,79,.65) 45%,rgba(11,46,79,.05) 80%)}
+.portada .in{position:relative;padding:22px 24px;color:#fff;max-width:640px}
+.portada .org{font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;font-weight:700;opacity:.85}
+.portada h1{color:#fff;margin:4px 0 4px;font-size:1.6rem}
+.portada .sub{color:rgba(255,255,255,.88);margin:0;font-size:.9rem}
+.fatal .ph{width:100%;height:200px;border-radius:12px;background:url(rama-kay.jpg) center/cover;margin-bottom:18px}
+@media (max-width:720px){.portada{min-height:170px}.portada::before{background:linear-gradient(0deg,rgba(11,46,79,.92) 0%,rgba(11,46,79,.55) 55%,rgba(11,46,79,.1) 100%)}.portada h1{font-size:1.3rem}.portada .in{padding:16px}}
+.topbar{padding-top:env(safe-area-inset-top);height:calc(58px + env(safe-area-inset-top))}
+.side{top:calc(58px + env(safe-area-inset-top))}
+body.locked{overflow:hidden}
+.gate{position:fixed;inset:0;z-index:90;background:linear-gradient(160deg,#07243f,#0b2e4f 55%,#0f5468);overflow:auto;display:flex;justify-content:center;align-items:flex-start;padding:calc(20px + env(safe-area-inset-top)) 14px calc(24px + env(safe-area-inset-bottom))}
+.gbox{width:100%;max-width:440px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.35);margin:auto 0}
+.gph{height:190px;background:#0b2e4f url(rama-kay.jpg) center 55%/cover;position:relative}
+.gph::after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,rgba(11,46,79,.85),rgba(11,46,79,0) 60%)}
+.gph .t{position:absolute;left:18px;right:18px;bottom:14px;color:#fff;z-index:1}
+.gph .t .o{font-size:.7rem;letter-spacing:.09em;text-transform:uppercase;font-weight:700;opacity:.9}
+.gph .t .h{font-size:1.25rem;font-weight:700;line-height:1.2}
+.gin{padding:18px 20px 20px}
+.gin h2{font-size:1.1rem;margin-bottom:6px}
+.gin .gp{color:var(--ink-2);font-size:.88rem;margin:0 0 12px}
+.gin form{display:flex;flex-direction:column;gap:12px}
+.gin .frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.gerr{color:var(--bad);font-size:.86rem}
+.btn.wide{width:100%;height:46px;margin-top:2px}
+.glinks{display:flex;flex-direction:column;gap:8px;margin-top:14px;font-size:.86rem}
+.ginst{margin-top:14px;background:var(--teal-soft);color:#0b4a54;border-radius:10px;padding:10px 12px;font-size:.84rem}
+.instBtn{margin-top:12px}
+.gate textarea{font-family:ui-monospace,Menlo,monospace;font-size:13px}
+.updbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom));z-index:85;background:var(--navy);color:#fff;border-radius:12px;padding:10px 12px 10px 16px;display:flex;gap:12px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,.3);font-size:.9rem;width:max-content;max-width:calc(100vw - 24px)}
+.side .foot a{color:var(--teal);text-decoration:none;display:block;padding:5px 0;font-weight:500}
+/* Responsive */
+@media (max-width:1100px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.formgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:1023px){
+  .menubtn{display:block}
+  .side{position:fixed;left:0;top:58px;bottom:0;height:auto;z-index:50;transform:translateX(-105%);transition:transform .2s;box-shadow:4px 0 20px rgba(0,0,0,.15)}
+  .side.open{transform:none}
+  .scrim.open{display:block;position:fixed;inset:58px 0 0 0;background:rgba(0,0,0,.3);z-index:40}
+  main{padding:16px 14px 96px}
+  .grid2{grid-template-columns:1fr}
+  .bottomnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:35;background:#fff;border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+  .bottomnav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.68rem;color:var(--ink-3);text-decoration:none;padding:4px 0;font-weight:500}
+  .bottomnav a.on{color:var(--navy);font-weight:600}
+  .bottomnav a.plus span.ic{background:var(--teal);color:#fff;border-radius:12px;width:44px;height:30px;display:flex;align-items:center;justify-content:center}
+}
+@media (max-width:720px){
+  .brand .t1{display:none}
+  .userchip .nm{display:none}
+  h1{font-size:1.25rem}
+  .kpi .v{font-size:1.25rem}
+  .formgrid{grid-template-columns:1fr 1fr;gap:12px}
+  .formgrid .m1{grid-column:1/-1}
+  .filters .fld{flex:1 1 140px}
+  .desk{display:none}
+  .rcards{display:block}
+  .chartbox{height:240px}
+  .card{padding:14px}
+  .mbox{max-height:calc(100vh - 16px)}
+  .modal{padding:8px;align-items:flex-end}
+}
+</style>
+</head>
+<body>
+<div id="gate" class="gate hidden"><div class="gbox"><div class="gph"><div class="t"><div class="o">Administración Portuaria Bluff</div><div class="h">Control de Operaciones de Dragado</div></div></div><div class="gin" id="gBody"></div></div></div>
+<div id="updBanner" class="updbar hidden"><span>Hay una nueva versión de la App</span><button class="btn acc sm" id="updBtn">Actualizar</button></div>
+<header class="topbar">
+  <button class="menubtn" id="menuBtn" aria-label="Abrir menú"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  <div class="brand">
+    <img class="logo" src="icono-192.png" alt="Draga Rama Kay" width="36" height="36">
+    <div style="min-width:0"><div class="t1">Administración Portuaria Bluff</div><div class="t2">Control de Operaciones de Dragado</div></div>
+  </div>
+  <div class="sp"></div>
+  <div class="userchip hidden" id="userChip"><img id="uAvatar" alt=""><span class="nm" id="uName"></span><span class="rolebadge" id="uRole"></span></div>
+</header>
+<div id="offBanner" class="banner hidden">Hay cambios guardados en este dispositivo que aún no se enviaron a GitHub. Se enviarán automáticamente al tener conexión.</div>
+<div class="shell">
+  <nav class="side" id="side">
+    <div class="sec">Operación</div>
+    <a href="#inicio" data-v="inicio"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-8 9 8M5 10v10h14V10"/></svg>Inicio</a>
+    <a href="#registrar" data-v="registrar" data-need="write"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Registrar operación</a>
+    <a href="#historial" data-v="historial"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Historial de operaciones</a>
+    <a href="#informes" data-v="informes"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h9l4 4v14H6z"/><path d="M9 13h7M9 17h7M9 9h3"/></svg>Informes</a>
+    <div class="sec" data-need="admin">Administración</div>
+    <a href="#dragas" data-v="dragas" data-need="admin"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17h18l-2 3H5zM6 17V9h6l3 4h4v4"/></svg>Catálogo de dragas</a>
+    <a href="#proyectos" data-v="proyectos" data-need="admin"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg>Catálogo de proyectos</a>
+    <a href="#usuarios" data-v="usuarios" data-need="admin"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5M16 4.5a3.5 3.5 0 010 7M18 14.8c1.8.7 3 2.4 3.5 5.2"/></svg>Administración de usuarios</a>
+    <div class="foot"><span id="syncState">Sin sincronizar</span><div id="sideInst"></div><div style="margin-top:10px"><a href="#" id="pwBtn">Cambiar contraseña</a><a href="#" id="lockBtn">Cerrar sesión</a><a href="#" id="wipeBtn" style="color:var(--ink-3)">Quitar acceso de este dispositivo</a></div><div id="verTxt" style="margin-top:8px"></div></div>
+  </nav>
+  <div class="scrim" id="scrim"></div>
+  <main id="main">
+    <div id="fatal" class="fatal hidden"></div>
+
+    <!-- INICIO -->
+    <section class="view" id="v-inicio">
+      <div class="portada"><div class="in"><div class="org">Administración Portuaria Bluff · Bluefields</div><h1>Panel de producción</h1><p class="sub" id="dashSub">Indicadores de las operaciones de dragado</p></div></div>
+      <div class="card filters">
+        <div class="fld"><label for="dPer">Período</label><select id="dPer"><option value="anio">Año actual</option><option value="mes">Mes actual</option><option value="12m">Últimos 12 meses</option><option value="todo">Todo el historial</option><option value="custom">Personalizado</option></select></div>
+        <div class="fld"><label for="dDesde">Desde</label><input type="date" id="dDesde"></div>
+        <div class="fld"><label for="dHasta">Hasta</label><input type="date" id="dHasta"></div>
+        <div class="fld"><label for="dDraga">Draga</label><select id="dDraga"></select></div>
+        <div class="fld"><label for="dProy">Proyecto</label><select id="dProy"></select></div>
+      </div>
+      <div class="kpis" id="kpis"></div>
+      <div class="grid2 gapb">
+        <div class="card"><div class="ch"><h2 id="chMesT">Producción mensual por draga (m³)</h2></div><div class="legend" id="lgMes"></div><div class="chartbox"><canvas id="chMes"></canvas></div></div>
+        <div class="card"><div class="ch"><h2>Producción anual (m³)</h2></div><div id="bestYear"></div><div class="chartbox"><canvas id="chAnio"></canvas></div></div>
+        <div class="card"><div class="ch"><h2>Rendimiento por draga (m³ por hora efectiva)</h2></div><div class="chartbox"><canvas id="chRend"></canvas></div></div>
+        <div class="card"><div class="ch"><h2>Avance lineal por proyecto (m)</h2></div><div class="chartbox"><canvas id="chAvance"></canvas></div></div>
+      </div>
+      <div class="card"><div class="ch"><h2>Comparación entre dragas</h2></div><div id="cmpDragas"></div></div>
+      <div class="card"><div class="ch"><h2>Producción por proyecto</h2></div><div id="cmpProy"></div></div>
+      <div class="card"><div class="ch"><h2>Últimas operaciones registradas</h2><a class="btn ghost sm" href="#historial">Ver historial →</a></div><div id="ultimas"></div></div>
+    </section>
+
+    <!-- REGISTRAR -->
+    <section class="view hidden" id="v-registrar">
+      <div class="pagehead"><div><h1 id="fTitle">Registrar operación</h1><p class="sub" id="fSub">Complete los datos de la operación diaria. El volumen se calcula automáticamente.</p></div></div>
+      <form id="opForm" novalidate>
+        <div class="card">
+          <div class="fsec">Información general</div>
+          <div class="formgrid">
+            <div class="fld" data-f="fecha"><label class="req" for="fFecha">Fecha de operación</label><input type="date" id="fFecha"><span class="emsg"></span></div>
+            <div class="fld" data-f="draga"><label class="req" for="fDraga">Draga</label><select id="fDraga"></select><span class="emsg"></span></div>
+            <div class="fld span2 m1" data-f="proyecto"><label class="req" for="fProy">Proyecto o ubicación</label><select id="fProy"></select><span class="emsg"></span></div>
+            <div class="fld" data-f="turno"><label for="fTurno">Turno o referencia</label><input type="text" id="fTurno" list="turnos" placeholder="Opcional" maxlength="60"><datalist id="turnos"><option value="Diurno"><option value="Nocturno"><option value="Turno 1"><option value="Turno 2"><option value="Turno 3"></datalist><span class="emsg"></span></div>
+            <div class="fld span2 m1" data-f="responsable"><label class="req" for="fResp">Responsable del registro</label><input type="text" id="fResp" maxlength="100"><span class="emsg"></span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="fsec">Control de tiempos operativos (horas)</div>
+          <div class="formgrid">
+            <div class="fld" data-f="acople"><label class="req" for="fAco">Maniobra de acople</label><input type="text" inputmode="decimal" id="fAco" placeholder="0.00"><span class="emsg"></span></div>
+            <div class="fld" data-f="efectivas"><label class="req" for="fEfe">Horas efectivas de dragado</label><input type="text" inputmode="decimal" id="fEfe" placeholder="0.00"><span class="emsg"></span></div>
+            <div class="fld" data-f="desacople"><label class="req" for="fDes">Tiempo de desacople</label><input type="text" inputmode="decimal" id="fDes" placeholder="0.00"><span class="emsg"></span></div>
+            <div class="fld" data-f="total"><label for="fTot">Tiempo total de operación</label><input type="text" id="fTot" readonly tabindex="-1"><span class="hint">Acople + efectivas + desacople</span><span class="emsg"></span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="fsec">Información técnica de producción</div>
+          <div class="formgrid">
+            <div class="fld" data-f="profundidad"><label class="req" for="fProf">Profundidad diaria (m)</label><input type="text" inputmode="decimal" id="fProf" placeholder="0.00"><span class="emsg"></span></div>
+            <div class="fld" data-f="avance"><label class="req" for="fAv">Metros lineales de avance</label><input type="text" inputmode="decimal" id="fAv" placeholder="0.00"><span class="emsg"></span></div>
+            <div class="fld" data-f="ancho"><label for="fAncho">Ancho del canal (m)</label><input type="text" inputmode="decimal" id="fAncho" readonly><span class="hint" id="anchoHint">Se carga desde el proyecto</span><span class="emsg"></span></div>
+            <div class="fld" id="anchoAdm" style="justify-content:flex-end"><label class="chk hidden" id="anchoChkL"><input type="checkbox" id="anchoChk"> Modificar ancho (justificación técnica)</label></div>
+            <div class="fld span4 hidden" data-f="justificacion" id="justWrap"><label class="req" for="fJust">Justificación técnica del cambio de ancho</label><input type="text" id="fJust" maxlength="300"><span class="emsg"></span></div>
+          </div>
+          <div class="calc" style="margin-top:14px">
+            <div><div class="lbl">Volumen diario calculado · V = A × P × L</div><div class="formula" id="fFormula">Ingrese profundidad y avance</div></div>
+            <div class="big" id="fVol">0.00<small>m³</small></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="fsec">Observaciones e incidencias</div>
+          <div class="chips" id="obsChips"></div>
+          <div class="fld" data-f="observaciones"><textarea id="fObs" maxlength="3000" placeholder="Describa averías, condiciones climáticas, mantenimiento, tiempos muertos u otras situaciones."></textarea><span class="emsg"></span></div>
+        </div>
+        <div class="btnrow" style="justify-content:flex-end">
+          <button type="button" class="btn sec hidden" id="fCancel">Cancelar edición</button>
+          <button type="button" class="btn sec" id="fClear">Limpiar</button>
+          <button type="submit" class="btn pri" id="fSave">Guardar operación</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- HISTORIAL -->
+    <section class="view hidden" id="v-historial">
+      <div class="pagehead"><div><h1>Historial de operaciones</h1><p class="sub" id="hSub"></p></div>
+        <div class="btnrow"><button class="btn sec sm" id="hCsv">Exportar CSV</button><button class="btn sec sm" id="hXlsx">Exportar Excel</button></div></div>
+      <div class="card filters">
+        <div class="fld" style="flex:2 1 200px"><label for="hQ">Buscar</label><input type="text" id="hQ" placeholder="Turno, responsable, observaciones…"></div>
+        <div class="fld"><label for="hDesde">Desde</label><input type="date" id="hDesde"></div>
+        <div class="fld"><label for="hHasta">Hasta</label><input type="date" id="hHasta"></div>
+        <div class="fld"><label for="hDraga">Draga</label><select id="hDraga"></select></div>
+        <div class="fld"><label for="hProy">Proyecto</label><select id="hProy"></select></div>
+        <div class="fld"><label for="hOrd">Orden</label><select id="hOrd"><option value="desc">Más recientes primero</option><option value="asc">Más antiguos primero</option></select></div>
+        <button class="btn ghost sm" id="hReset">Limpiar filtros</button>
+      </div>
+      <div class="card">
+        <div id="hTotals" class="note" style="margin-bottom:10px"></div>
+        <div id="hTable" class="desk"></div>
+        <div id="hCards" class="rcards"></div>
+        <div class="btnrow" style="justify-content:center;margin-top:12px"><button class="btn sec sm hidden" id="hMore">Mostrar más</button></div>
+      </div>
+    </section>
+
+    <!-- INFORMES -->
+    <section class="view hidden" id="v-informes">
+      <div class="pagehead"><div><h1>Informes y consultas históricas</h1><p class="sub">Seleccione el tipo de informe, el período y el alcance.</p></div></div>
+      <div class="card filters" id="repCtl">
+        <div class="fld"><label for="rTipo">Tipo de informe</label><select id="rTipo"><option value="diario">Diario</option><option value="semanal">Semanal</option><option value="mensual" selected>Mensual</option><option value="anual">Anual</option><option value="rango">Rango de fechas</option><option value="multianual">Comparación de varios años</option></select></div>
+        <div class="fld" data-r="diario semanal"><label for="rFecha" id="rFechaL">Fecha</label><input type="date" id="rFecha"></div>
+        <div class="fld" data-r="mensual"><label for="rMes">Mes</label><input type="month" id="rMes"></div>
+        <div class="fld" data-r="anual"><label for="rAnio">Año</label><select id="rAnio"></select></div>
+        <div class="fld" data-r="rango"><label for="rDesde">Fecha inicial</label><input type="date" id="rDesde"></div>
+        <div class="fld" data-r="rango"><label for="rHasta">Fecha final</label><input type="date" id="rHasta"></div>
+        <div class="fld" data-r="multianual"><label for="rA1">Desde el año</label><select id="rA1"></select></div>
+        <div class="fld" data-r="multianual"><label for="rA2">Hasta el año</label><select id="rA2"></select></div>
+        <div class="fld"><label for="rAlc">Alcance</label><select id="rAlc"><option value="todo">Consolidado (todas)</option><option value="draga">Por draga individual</option><option value="proyecto">Por proyecto individual</option></select></div>
+        <div class="fld hidden" id="rObjW"><label for="rObj" id="rObjL">Draga</label><select id="rObj"></select></div>
+        <div class="fld hidden" id="rFiltW"><label for="rProyF" id="rFiltL">Proyecto (opcional)</label><select id="rProyF"></select></div>
+        <button class="btn pri" id="rGen">Generar informe</button>
+      </div>
+      <div id="repOut"></div>
+    </section>
+
+    <!-- DRAGAS -->
+    <section class="view hidden" id="v-dragas">
+      <div class="pagehead"><div><h1>Catálogo de dragas</h1><p class="sub">Las dragas desactivadas conservan todo su historial de operaciones.</p></div><button class="btn pri" id="addDraga">+ Agregar draga</button></div>
+      <div class="catgrid" id="dragaList"></div>
+    </section>
+
+    <!-- PROYECTOS -->
+    <section class="view hidden" id="v-proyectos">
+      <div class="pagehead"><div><h1>Catálogo de proyectos y canales</h1><p class="sub">Cada proyecto tiene su propio ancho de canal. Cambiarlo no altera los volúmenes ya registrados.</p></div><button class="btn pri" id="addProy">+ Agregar proyecto</button></div>
+      <div class="catgrid" id="proyList"></div>
+    </section>
+
+    <!-- USUARIOS -->
+    <section class="view hidden" id="v-usuarios">
+      <div class="pagehead"><div><h1>Administración de usuarios</h1><p class="sub">Accesos, permisos, historial de modificaciones, GitHub y respaldos.</p></div><button class="btn pri" id="addUser">+ Agregar usuario</button></div>
+      <div class="card"><div class="ch"><h2>Usuarios</h2></div>
+        <div class="info" style="margin-bottom:12px">Cada usuario recibe un <b>código de acceso personal</b> y crea su propia contraseña en su teléfono o computadora; las contraseñas nunca salen del dispositivo. <b>Operador</b>: registra operaciones y consulta. <b>Consulta</b>: solo lectura. <b>Administrador</b>: acceso completo. Cada registro va firmado digitalmente, por lo que los permisos se verifican en todos los dispositivos.</div>
+        <div id="userTable"></div></div>
+      <div class="card"><div class="ch"><h2>Historial de modificaciones</h2><button class="btn sec sm" id="auCsv">Exportar CSV</button></div>
+        <div class="filters" style="margin-bottom:10px"><div class="fld" style="flex:1"><input type="text" id="auQ" placeholder="Filtrar por usuario, acción o detalle…"></div></div><div id="auTbl"></div></div>
+      <div class="card"><div class="ch"><h2>Almacenamiento en GitHub</h2><div class="btnrow"><button class="btn sec sm" id="syncNow">Sincronizar ahora</button><button class="btn sec sm" id="myCode">Mi código de administrador</button></div></div>
+        <div id="ghInfo"></div><p class="note">Los datos se guardan cifrados en los Issues del repositorio y GitHub conserva todas las versiones. Cada dispositivo guarda además una copia local y funciona sin internet.</p></div>
+      <div class="card"><div class="ch"><h2>Respaldos</h2></div>
+        <p class="note" style="margin-top:0">Descargue periódicamente un respaldo completo y guárdelo en un lugar seguro.</p>
+        <div class="btnrow"><button class="btn sec" id="bkJson">Respaldo completo (JSON)</button><button class="btn sec" id="bkXlsx">Respaldo en Excel</button></div></div>
+    </section>
+
+  </main>
+</div>
+<nav class="bottomnav" id="bottomnav">
+  <a href="#inicio" data-v="inicio"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-8 9 8M5 10v10h14V10"/></svg></span>Inicio</a>
+  <a href="#historial" data-v="historial"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span>Historial</a>
+  <a href="#registrar" data-v="registrar" data-need="write" class="plus"><span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg></span>Registrar</a>
+  <a href="#informes" data-v="informes"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h9l4 4v14H6z"/><path d="M9 13h7M9 17h7"/></svg></span>Informes</a>
+  <a href="#" id="bnMenu"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span>Menú</a>
+</nav>
+<div id="modal" class="modal hidden"><div class="mbox"><div class="mh"><h2 id="mTitle"></h2><button class="xbtn" id="mX" aria-label="Cerrar">×</button></div><div class="mb" id="mBody"></div><div class="mf" id="mFoot"></div></div></div>
+<div id="toast" class="toast"></div>
+
+<script>
+"use strict";
+/* ============ Utilidades ============ */
+const PAL=['#2a78d6','#eb6834','#1baf7a','#eda100','#e87ba4','#008300','#6250d6','#e34948'];
+const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const MESC=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const DIAS=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=(n,d=2)=>(n==null||n===''||isNaN(n))?'—':Number(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const pymd=s=>{const[a,b,c]=s.split('-').map(Number);return new Date(a,b-1,c)};
+const hoy=()=>ymd(new Date());
+const fCorta=s=>s?`${s.slice(8,10)}/${s.slice(5,7)}/${s.slice(0,4)}`:'';
+const fLarga=s=>{const d=pymd(s);return `${DIAS[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()].toLowerCase()} de ${d.getFullYear()}`};
+const fDT=iso=>{if(!iso)return'';const d=new Date(iso);return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`};
+function dias(desde,hasta){const o=[];const d=pymd(desde),h=pymd(hasta);while(d<=h){o.push(ymd(d));d.setDate(d.getDate()+1)}return o}
+function lunes(s){const d=pymd(s);d.setDate(d.getDate()-((d.getDay()+6)%7));return ymd(d)}
+function addDays(s,n){const d=pymd(s);d.setDate(d.getDate()+n);return ymd(d)}
+function finMes(y,m){return ymd(new Date(y,m,0))}
+const rid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+function parseNum(v){if(v==null)return NaN;let s=String(v).trim().replace(/\s/g,'');if(s==='')return NaN;s=s.replace(',','.');if(!/^-?\d*\.?\d+$/.test(s))return NaN;return Number(s)}
+function parseHoras(v){const s=String(v??'').trim();const m=s.match(/^(\d{1,2}):(\d{1,2})$/);if(m){const mm=+m[2];if(mm>59)return NaN;return +m[1]+mm/60}return parseNum(s)}
+const r2=n=>Math.round(n*100)/100;
+let toastT;function toast(msg,kind){const t=$('#toast');t.textContent=msg;t.className='toast on '+(kind||'');clearTimeout(toastT);toastT=setTimeout(()=>t.className='toast',3800)}
+
+/* ============ Estado ============ */
+const S={acc:null,pend:[],hist:[],nRecs:0,since:null,lastSync:null,syncErr:null,uid:null,me:null,isOwner:false,isAdmin:false,canWrite:false,rol:'consulta',
+  dragas:{},proyectos:{},usuarios:{},permisos:{},buckets:{},ops:[],names:{},regSubs:{},editing:null,ready:{dragas:false},view:'inicio',rep:null,audit:null,histLimit:100};
+
+/* ============ Modal ============ */
+function openModal(title,bodyHtml,buttons){
+  $('#mTitle').textContent=title;$('#mBody').innerHTML=bodyHtml;const f=$('#mFoot');f.innerHTML='';
+  (buttons||[{t:'Cerrar',c:'sec'}]).forEach(b=>{const el=document.createElement('button');el.className='btn '+(b.c||'sec');el.textContent=b.t;el.onclick=async()=>{if(b.fn){el.disabled=true;try{const r=await b.fn();if(r===false){el.disabled=false;return}}catch(e){el.disabled=false;toast(errMsg(e),'bad');return}}closeModal()};f.appendChild(el)});
+  $('#modal').classList.remove('hidden');
+}
+function closeModal(){$('#modal').classList.add('hidden')}
+$('#mX').onclick=closeModal;$('#modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
+function confirmar(title,msg,okText,fn){openModal(title,`<p style="margin:0">${msg}</p>`,[{t:'Cancelar',c:'sec'},{t:okText,c:'dan',fn}])}
+
+/* ============ Datos: GitHub cifrado + firmas digitales ============ */
+const APP_VER='2026.11.10-1';
+const DEF_REPO={o:'jesiahm2324-gif',rp:'control-dragado-apbb'};
+const APP_URL=(location.protocol==='https:'?location.origin+location.pathname.replace(/index\.html$/,''):`https://${DEF_REPO.o}.github.io/${DEF_REPO.rp}/`);
+const IOS=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const STANDALONE=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;
+const IDB={d:null,open(){if(this.d)return this.d;this.d=new Promise((res,rej)=>{const r=indexedDB.open('dragado-apbb',1);r.onupgradeneeded=()=>{const d=r.result;d.createObjectStore('kv');d.createObjectStore('recs',{keyPath:'n'})};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});return this.d},
+  async tx(st,mode,fn){const d=await this.open();return new Promise((res,rej)=>{const t=d.transaction(st,mode);const q=fn(t.objectStore(st));t.oncomplete=()=>res(q?q.result:undefined);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)})},
+  get(k){return this.tx('kv','readonly',s=>s.get(k))},set(k,v){return this.tx('kv','readwrite',s=>s.put(v,k))},all(){return this.tx('recs','readonly',s=>s.getAll())},put(r){return this.tx('recs','readwrite',s=>s.put(r))},
+  async clear(){await this.tx('recs','readwrite',s=>s.clear());await this.tx('kv','readwrite',s=>s.clear())}};
+const te=new TextEncoder(),td=new TextDecoder();
+const b64u=b=>{const a=b instanceof Uint8Array?b:new Uint8Array(b);let s='';for(let i=0;i<a.length;i+=0x8000)s+=String.fromCharCode.apply(null,a.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')};
+const ub64u=s=>{s=String(s).replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';return Uint8Array.from(atob(s),c=>c.charCodeAt(0))};
+const EC={name:'ECDSA',namedCurve:'P-256'},SG={name:'ECDSA',hash:'SHA-256'};
+const kc=new Map();
+function impKey(k,use){const id=(typeof k==='string'?k:JSON.stringify(k))+'|'+use;if(!kc.has(id))kc.set(id,use==='aes'?crypto.subtle.importKey('raw',ub64u(k),'AES-GCM',false,['encrypt','decrypt']):crypto.subtle.importKey('jwk',Object.assign({},k,{key_ops:[use],ext:true}),EC,false,[use]));return kc.get(id)}
+async function genPair(){const kp=await crypto.subtle.generateKey(EC,true,['sign','verify']);return{pub:await crypto.subtle.exportKey('jwk',kp.publicKey),priv:await crypto.subtle.exportKey('jwk',kp.privateKey)}}
+async function firmar(priv,str){return b64u(await crypto.subtle.sign(SG,await impKey(priv,'sign'),te.encode(str)))}
+async function verificar(pub,str,sig){try{return await crypto.subtle.verify(SG,await impKey(pub,'verify'),ub64u(sig),te.encode(str))}catch(e){return false}}
+async function aesEnc(dk,obj){const iv=crypto.getRandomValues(new Uint8Array(12));const c=await crypto.subtle.encrypt({name:'AES-GCM',iv},await impKey(dk,'aes'),te.encode(JSON.stringify(obj)));return{v:1,iv:b64u(iv),c:b64u(c)}}
+async function aesDec(dk,env){const p=await crypto.subtle.decrypt({name:'AES-GCM',iv:ub64u(env.iv)},await impKey(dk,'aes'),ub64u(env.c));return JSON.parse(td.decode(p))}
+async function passKey(pass,salt){const b=await crypto.subtle.importKey('raw',te.encode(pass),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:210000,hash:'SHA-256'},b,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])}
+async function vaultSave(acc,pass){const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));const c=await crypto.subtle.encrypt({name:'AES-GCM',iv},await passKey(pass,salt),te.encode(JSON.stringify(acc)));
+  localStorage.setItem('drg_vault',JSON.stringify({salt:b64u(salt),iv:b64u(iv),c:b64u(c),n:acc.n,r:acc.r,u:acc.u}))}
+async function vaultOpen(pass){const v=JSON.parse(localStorage.getItem('drg_vault'));const p=await crypto.subtle.decrypt({name:'AES-GCM',iv:ub64u(v.iv)},await passKey(pass,ub64u(v.salt)),ub64u(v.c));return JSON.parse(td.decode(p))}
+const codeOf=acc=>'DRGAPBB1.'+b64u(te.encode(JSON.stringify(acc)));
+function parseCode(s){const m=String(s||'').replace(/\s+/g,'').match(/DRGAPBB1\.([A-Za-z0-9_-]+)/);if(!m)throw new Error('El código de acceso no es válido. Cópielo completo.');let a;try{a=JSON.parse(td.decode(ub64u(m[1])))}catch(e){throw new Error('El código de acceso está dañado o incompleto.')}
+  if(!a||a.v!==1||!a.u||!a.dk||!a.rk||!a.o||!a.rp||!a.t)throw new Error('El código de acceso está incompleto.');return a}
+
+/* --- GitHub --- */
+function errMsg(e){const st=e&&e.status;if(st===401)return 'La llave de GitHub no es válida o venció. Solicite un nuevo código al administrador.';if(st===403||st===429)return 'GitHub limitó temporalmente las solicitudes. Intente en unos minutos.';if(st===404)return 'No se encontró el repositorio o la llave no tiene acceso a sus Issues.';if(st===410)return 'Los Issues están desactivados en el repositorio. Actívelos en Settings → General → Features.';if(e&&e.name==='TypeError')return 'Sin conexión a internet. Los cambios se enviarán al reconectarse.';return (e&&e.message)||'Error inesperado.'}
+async function ghReq(acc,path,opt={}){const r=await fetch(`https://api.github.com/repos/${acc.o}/${acc.rp}${path}`,Object.assign({cache:'no-store'},opt,{headers:Object.assign({Authorization:'Bearer '+acc.t,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'},opt.body?{'Content-Type':'application/json'}:{})}));
+  if(!r.ok){const e=new Error('GitHub '+r.status);e.status=r.status;throw e}return r.status===204?null:r.json()}
+const gh=(p,o)=>ghReq(S.acc,p,o);
+
+/* --- Registros --- */
+const RECS=new Map();
+async function loadLocal(){RECS.clear();(await IDB.all()).forEach(r=>RECS.set(r.n,r));S.pend=(await IDB.get('pend'))||[];S.pend.forEach(p=>RECS.set(p.n,p));S.since=(await IDB.get('since'))||null;S.lastSync=(await IDB.get('lastSync'))||null}
+const savePend=()=>IDB.set('pend',S.pend.map(x=>({n:x.n,body:x.body,env:x.env,pend:true,v:x.v})));
+async function ingest(it){if(it.pull_request||!/^DRG/.test(it.title||''))return false;const old=RECS.get(it.number);if(old&&(old.env||old.body===it.body))return false;
+  let env=null;try{env=await aesDec(S.acc.dk,JSON.parse(it.body))}catch(e){}
+  const r=env&&typeof env.p==='string'?{n:it.number,body:it.body,env,upd:it.updated_at}:{n:it.number,body:it.body,bad:true};RECS.set(r.n,r);await IDB.put(r);return true}
+async function ver(r,pub,k){if(r.v===k)return true;const ok=await verificar(pub,r.env.p,r.env.s);if(ok){r.v=k;if(!r.pend)IDB.put(r).catch(()=>{})}return ok}
+const CAMPOS={fecha:'Fecha',dragaNombre:'Draga',proyectoNombre:'Proyecto',turno:'Turno',responsable:'Responsable',acople:'Acople',efectivas:'Efectivas',desacople:'Desacople',total:'Total h',profundidad:'Profundidad',avance:'Avance',ancho:'Ancho',volumen:'Volumen',observaciones:'Observaciones',justificacion:'Justificación'};
+async function rebuild(){const root=S.acc.rk;
+  const list=[];for(const r of RECS.values()){if(!r.env)continue;let P;try{P=JSON.parse(r.env.p)}catch(e){continue}if(!P||!P.t||!P.id||!P.ts)continue;list.push({r,P})}
+  list.sort((a,b)=>a.P.ts<b.P.ts?-1:a.P.ts>b.P.ts?1:(a.r.n>0&&b.r.n>0?a.r.n-b.r.n:(a.r.n>0?-1:b.r.n>0?1:a.r.n-b.r.n)));
+  // 1) usuarios: solo con la firma raíz del administrador
+  const users={},st={op:{},draga:{},proy:{},usuario:{}},hist=[],seen=new Set();
+  for(const {r,P} of list){if(P.t!=='usuario'||r.env.k!=='root')continue;if(!(await ver(r,root,'root')))continue;const d=P.d||{};
+    if(!users[P.id]){if(!d.pub)continue;users[P.id]={pub:d.pub,h:[]}}users[P.id].h.push({ts:P.ts,rol:d.rol,activo:d.activo!==false});
+    const prev=st.usuario[P.id];st.usuario[P.id]=Object.assign({},d,{creado:prev?prev.creado:P.ts,_ts:P.ts});delete st.usuario[P.id].pub;
+    hist.push({t:P.ts,uid:P.au,accion:!prev?'Creó usuario':prev.activo!==false&&d.activo===false?'Desactivó usuario':prev.activo===false&&d.activo!==false?'Activó usuario':'Modificó usuario',detalle:`${d.nombre||''} · ${({admin:'Administrador',operador:'Operador',consulta:'Consulta'})[d.rol]||''}`,pend:!!r.pend})}
+  // 2) resto de registros
+  for(const {r,P} of list){if(P.t==='usuario')continue;const k=r.env.k;let pub,rol,activo;
+    if(k==='root'){pub=root;rol='admin';activo=true}else{const u=users[k];if(!u)continue;pub=u.pub;const h=u.h.filter(x=>x.ts<=P.ts).pop()||u.h[0];rol=h.rol;activo=h.activo}
+    if(!activo||!(rol==='admin'||rol==='operador'))continue;if(!(await ver(r,pub,k)))continue;
+    if(P.t==='draga'||P.t==='proy'){if(rol!=='admin')continue;const prev=st[P.t][P.id];st[P.t][P.id]=Object.assign({},P.d,{_ts:P.ts});const nm=P.d&&P.d.nombre||'';
+      let det=nm;if(prev&&prev.nombre!==nm)det+=` (antes: ${prev.nombre})`;if(P.t==='proy'&&prev&&+prev.ancho!==+P.d.ancho)det+=` · ancho ${fmt(prev.ancho)} → ${fmt(P.d.ancho)} m`;
+      hist.push({t:P.ts,uid:P.au,accion:(prev?(P.t==='draga'&&prev.activa!==P.d.activa?(P.d.activa===false?'Desactivó':'Activó'):'Modificó'):'Creó')+(P.t==='draga'?' draga':' proyecto'),detalle:det,pend:!!r.pend})}
+    else if(P.t==='op'){if(rol!=='admin'&&(P.a!=='set'||seen.has(P.id)||P.au!==k))continue;const prev=st.op[P.id];seen.add(P.id);
+      if(P.a==='del'){if(!prev)continue;delete st.op[P.id];hist.push({t:P.ts,uid:P.au,accion:'Eliminó operación',detalle:`${fCorta(prev.fecha)} · ${prev.dragaNombre||''} · ${prev.proyectoNombre||''} · ${fmt(prev.volumen)} m³`,pend:!!r.pend});continue}
+      const d=Object.assign({},P.d,{id:P.id});if(rol!=='admin'){d.creadoPor=k}st.op[P.id]=d;
+      if(!prev)hist.push({t:P.ts,uid:P.au,accion:'Creó operación',detalle:`${fCorta(d.fecha)} · ${d.dragaNombre||''} · ${d.proyectoNombre||''} · ${fmt(d.volumen)} m³`,pend:!!r.pend});
+      else{const c=Object.keys(CAMPOS).filter(f=>String(prev[f]??'')!==String(d[f]??'')).map(f=>`${CAMPOS[f]}: ${prev[f]??''} → ${d[f]??''}`);hist.push({t:P.ts,uid:P.au,accion:'Modificó operación',detalle:`${fCorta(d.fecha)} · ${d.dragaNombre||''} · ${c.join('; ')||'sin cambios'}`,pend:!!r.pend})}}}
+  S.dragas=st.draga;S.proyectos=st.proy;S.usuarios=st.usuario;S.hist=hist.sort((a,b)=>a.t<b.t?1:a.t>b.t?-1:0);S.nRecs=[...RECS.values()].filter(r=>r.n>0).length;
+  const out=Object.values(st.op).map(o=>Object.assign({},o,{_owner:'x',_bucket:'x'}));out.sort((a,b)=>a.fecha<b.fecha?1:a.fecha>b.fecha?-1:String(b.creadoEn||'').localeCompare(String(a.creadoEn||'')));S.ops=out;
+  const me=st.usuario[S.uid];if(me&&me.activo===false){fatal('Su usuario fue desactivado por el administrador del sistema.');S.bloqueado=true}}
+async function saveRecord(t,id,a,d){if(!S.acc||!S.acc.sk)throw new Error('Su usuario no tiene permiso para registrar información.');
+  const P={t,id,a,d,au:S.acc.u,ts:new Date().toISOString()};const p=JSON.stringify(P);const env={p,s:await firmar(S.acc.sk,p),k:S.acc.kid};
+  const rec={n:-(Date.now()*1000+Math.floor(Math.random()*1000)),body:JSON.stringify(await aesEnc(S.acc.dk,env)),env,pend:true,v:S.acc.kid};
+  S.pend.push(rec);RECS.set(rec.n,rec);await savePend();await rebuild();schedule();flush();return rec}
+let flushing=null;
+function flush(){if(flushing)return flushing;flushing=Promise.resolve().then(async()=>{try{while(S.pend.length&&navigator.onLine!==false){const x=S.pend[0];setSync('Enviando a GitHub…');
+    const it=await gh('/issues',{method:'POST',body:JSON.stringify({title:'DRG registro',body:x.body})});RECS.delete(x.n);const r={n:it.number,body:x.body,env:x.env,upd:it.updated_at,v:x.v};RECS.set(r.n,r);await IDB.put(r);S.pend.shift();await savePend()}
+    S.syncErr=null}catch(e){S.syncErr=e}finally{flushing=null;setSync();schedule();if(S.pend.length&&!S.syncErr&&navigator.onLine!==false)setTimeout(flush,50)}});return flushing}
+let pulling=null;
+function pull(){if(pulling)return pulling;pulling=Promise.resolve().then(async()=>{try{let page=1,max=S.since,ch=false;
+    for(;;){const q=`/issues?state=all&per_page=100&sort=updated&direction=asc&page=${page}${S.since?'&since='+encodeURIComponent(S.since):''}`;const l=await gh(q);
+      for(const it of l){if(await ingest(it))ch=true;if(!max||it.updated_at>max)max=it.updated_at}if(l.length<100||page>=300)break;page++}
+    if(max!==S.since){S.since=max;await IDB.set('since',max)}S.lastSync=new Date().toISOString();await IDB.set('lastSync',S.lastSync);S.syncErr=null;if(ch){await rebuild();schedule()}}
+    catch(e){S.syncErr=e}finally{pulling=null;setSync()}});return pulling}
+async function sync(){if(!S.acc)return;await flush();await pull();if(S.pend.length)await flush()}
+function setSync(txt){const el=$('#syncState');if(!el)return;if(txt){el.textContent=txt;return}
+  if(S.syncErr){el.innerHTML=`<span style="color:var(--bad)">${esc(errMsg(S.syncErr))}</span>`}
+  else el.textContent=(S.pend.length?`${S.pend.length} cambio(s) pendiente(s) de enviar · `:'')+(S.lastSync?`Sincronizado ${fDT(S.lastSync).slice(-5)}`:'Sin sincronizar');
+  $('#offBanner').classList.toggle('hidden',!(S.pend.length&&S.syncErr))}
+function audit(){return Promise.resolve()}
+function refreshNames(){return Promise.resolve()}
+const nombre=id=>(id&&S.usuarios[id]&&S.usuarios[id].nombre)||(id===S.uid&&S.acc?S.acc.n:'Usuario');
+
+function clone(o){return JSON.parse(JSON.stringify(o||{}))}
+
+/* ============ Catálogos ============ */
+const dragasOrd=()=>Object.entries(S.dragas).map(([id,d])=>Object.assign({id},d)).sort((a,b)=>(a.orden??999)-(b.orden??999)||String(a.nombre).localeCompare(b.nombre));
+const proysOrd=()=>Object.entries(S.proyectos).map(([id,d])=>Object.assign({id},d)).sort((a,b)=>(a.orden??999)-(b.orden??999)||String(a.nombre).localeCompare(b.nombre));
+const dNom=o=>(S.dragas[o.dragaId]&&S.dragas[o.dragaId].nombre)||o.dragaNombre||'—';
+const pNom=o=>(S.proyectos[o.proyectoId]&&S.proyectos[o.proyectoId].nombre)||o.proyectoNombre||'—';
+function dColor(id){const i=dragasOrd().findIndex(d=>d.id===id);return i<0?'#8a96a3':PAL[i%PAL.length]}
+function fillSel(sel,items,{all,allText,keep,inc}={}){const el=typeof sel==='string'?$(sel):sel;const v=keep!==undefined?keep:el.value;
+  el.innerHTML=(all?`<option value="">${allText||'Todas'}</option>`:'<option value="">Seleccione…</option>')+items.filter(i=>i.show!==false||i.id===inc).map(i=>`<option value="${esc(i.id)}">${esc(i.nombre)}${i.suf||''}</option>`).join('');
+  if([...el.options].some(o=>o.value===v))el.value=v}
+function fillCatalogSelects(){
+  const ds=dragasOrd().map(d=>({id:d.id,nombre:d.nombre,suf:d.activa===false?' (inactiva)':''}));
+  const ps=proysOrd().map(p=>({id:p.id,nombre:p.nombre}));
+  ['#dDraga','#hDraga'].forEach(s=>fillSel(s,ds,{all:true,allText:'Todas las dragas'}));
+  ['#dProy','#hProy','#rProyF'].forEach(s=>fillSel(s,ps,{all:true,allText:'Todos los proyectos'}));
+  const ed=S.editing;
+  fillSel('#fDraga',dragasOrd().map(d=>({id:d.id,nombre:d.nombre+(d.modelo?` · ${d.modelo}`:''),show:d.activa!==false})),{inc:ed&&ed.dragaId});
+  fillSel('#fProy',proysOrd().map(p=>({id:p.id,nombre:`${p.nombre} (ancho ${fmt(p.ancho)} m)`,show:p.estado!=='Finalizado'})),{inc:ed&&ed.proyectoId});
+  if(!$('#fProy').value){const act=proysOrd().filter(p=>p.estado!=='Finalizado');if(act.length===1){$('#fProy').value=act[0].id;onProyChange()}}
+  if(!$('#fDraga').value){}
+  const alc=$('#rAlc').value;
+  if(alc==='draga')fillSel('#rObj',ds);else if(alc==='proyecto')fillSel('#rObj',ps);
+  const ys=aniosDisponibles();['#rAnio','#rA1','#rA2'].forEach(s=>{const el=$(s);const v=el.value;el.innerHTML=ys.map(y=>`<option>${y}</option>`).join('');if(ys.includes(+v))el.value=v});
+  if(!$('#rA1').dataset.init){$('#rA1').value=ys[Math.max(0,ys.length-3)];$('#rA2').value=ys[ys.length-1];$('#rAnio').value=new Date().getFullYear();$('#rA1').dataset.init=1}
+}
+function aniosDisponibles(){const y0=new Date().getFullYear();let mn=y0;S.ops.forEach(o=>{const y=+o.fecha.slice(0,4);if(y<mn)mn=y});proysOrd().forEach(p=>{if(p.fechaInicio){const y=+p.fechaInicio.slice(0,4);if(y<mn&&y>1990)mn=y}});mn=Math.min(mn,y0-4);const o=[];for(let y=mn;y<=y0;y++)o.push(y);return o}
+
+/* ============ Cálculos ============ */
+function agg(list){const r={n:list.length,vol:0,lin:0,aco:0,efe:0,des:0,tot:0};const ds=new Set();
+  for(const o of list){r.vol+=+o.volumen||0;r.lin+=+o.avance||0;r.aco+=+o.acople||0;r.efe+=+o.efectivas||0;r.des+=+o.desacople||0;r.tot+=+o.total||0;ds.add(o.fecha)}
+  r.dias=ds.size;r.rend=r.efe>0?r.vol/r.efe:null;r.prom=r.dias?r.vol/r.dias:null;r.promLin=r.dias?r.lin/r.dias:null;r.promEfe=r.dias?r.efe/r.dias:null;return r}
+function filtrar({desde,hasta,draga,proyecto}){return S.ops.filter(o=>(!desde||o.fecha>=desde)&&(!hasta||o.fecha<=hasta)&&(!draga||o.dragaId===draga)&&(!proyecto||o.proyectoId===proyecto))}
+function groupBy(list,fn){const m=new Map();for(const o of list){const k=fn(o);if(!m.has(k))m.set(k,[]);m.get(k).push(o)}return m}
+
+/* ============ Navegación ============ */
+const VIEWS=['inicio','registrar','historial','informes','dragas','proyectos','usuarios'];
+const ADMIN_V=['dragas','proyectos','usuarios'];
+function allowed(v){if(ADMIN_V.includes(v))return S.isAdmin;if(v==='registrar')return S.canWrite;return true}
+function route(){let v=(location.hash||'').slice(1);if(!VIEWS.includes(v))v='inicio';if(!allowed(v)){v='inicio'}
+  S.view=v;$$('.view').forEach(s=>s.classList.toggle('hidden',s.id!=='v-'+v));
+  $$('[data-v]').forEach(a=>a.classList.toggle('on',a.dataset.v===v));closeSide();
+  if(v!=='registrar'&&S.editing){S.editing=null;resetForm()}
+  render(true);window.scrollTo(0,0)}
+function applyRoleUI(){$$('[data-need]').forEach(el=>{const n=el.dataset.need;el.classList.toggle('hidden',n==='admin'?!S.isAdmin:!S.canWrite)})}
+function closeSide(){$('#side').classList.remove('open');$('#scrim').classList.remove('open')}
+$('#menuBtn').onclick=()=>{$('#side').classList.toggle('open');$('#scrim').classList.toggle('open')};
+$('#bnMenu').onclick=e=>{e.preventDefault();$('#side').classList.add('open');$('#scrim').classList.add('open')};
+$('#scrim').onclick=closeSide;
+window.addEventListener('hashchange',route);
+
+let rq=false;function schedule(){if(rq)return;rq=true;requestAnimationFrame(()=>{rq=false;render(false)})}
+function render(full){if(!S.acc||S.bloqueado)return;fillCatalogSelects();
+  const v=S.view;
+  if(v==='inicio')renderInicio();else if(v==='historial')renderHist();else if(v==='informes'){if(S.rep)genReport(true)}
+  else if(v==='dragas')renderDragas();else if(v==='proyectos')renderProys();else if(v==='usuarios')renderUsers();
+  else if(v==='registrar'&&full&&!S.editing&&!$('#fFecha').value)resetForm();
+}
+function fatal(msg){$$('.view').forEach(s=>s.classList.add('hidden'));const f=$('#fatal');f.classList.remove('hidden');f.innerHTML=`<div class="ph"></div><h2>Control de Operaciones de Dragado</h2><p>${esc(msg)}</p>`;$('#bottomnav').classList.add('hidden')}
+
+/* ============ Charts ============ */
+const charts={};
+function chart(id,cfg){if(charts[id]){charts[id].destroy();delete charts[id]}const c=document.getElementById(id);if(!c||!window.Chart)return;charts[id]=new Chart(c,cfg)}
+if(window.Chart){Chart.defaults.font.family='"IBM Plex Sans",system-ui,sans-serif';Chart.defaults.font.size=12;Chart.defaults.color='#4a5866';Chart.defaults.borderColor='#eef1f4';Chart.defaults.plugins.legend.display=false;Chart.defaults.maintainAspectRatio=false;Chart.defaults.animation=false;
+  Chart.defaults.plugins.tooltip.backgroundColor='#0f1b26';Chart.defaults.plugins.tooltip.padding=10;Chart.defaults.plugins.tooltip.cornerRadius=6}
+function barCfg(labels,datasets,unit,opts={}){return{type:'bar',data:{labels,datasets:datasets.map(d=>Object.assign({borderRadius:4,borderSkipped:'start',maxBarThickness:34,borderColor:'#fff',borderWidth:{top:0,left:0,right:0,bottom:0}},d))},
+  options:{indexAxis:opts.h?'y':'x',interaction:{mode:'index',intersect:false},plugins:{tooltip:{callbacks:{label:c=>`${c.dataset.label?c.dataset.label+': ':''}${fmt(c.parsed[opts.h?'x':'y'],opts.d??0)} ${unit}`}}},
+  scales:{[opts.h?'y':'x']:{grid:{display:false},stacked:!!opts.stack},[opts.h?'x':'y']:{beginAtZero:true,stacked:!!opts.stack,ticks:{callback:v=>fmt(v,0)},grid:{color:'#eef1f4'},border:{display:false}}}}}}
+
+/* ============ INICIO ============ */
+function dashRange(){const p=$('#dPer').value,t=new Date(),y=t.getFullYear(),m=t.getMonth()+1;
+  if(p==='anio')return[`${y}-01-01`,`${y}-12-31`];if(p==='mes')return[`${y}-${pad(m)}-01`,finMes(y,m)];
+  if(p==='12m'){const d=new Date(y,m-12,1);return[ymd(d),finMes(y,m)]}if(p==='todo'){const ops=S.ops;return[ops.length?ops[ops.length-1].fecha:`${y}-01-01`,ops.length&&ops[0].fecha>hoy()?ops[0].fecha:hoy()]}
+  return[$('#dDesde').value||`${y}-01-01`,$('#dHasta').value||hoy()]}
+function syncDashDates(){if($('#dPer').value!=='custom'){const[a,b]=dashRange();$('#dDesde').value=a;$('#dHasta').value=b}}
+['#dPer'].forEach(s=>$(s).addEventListener('change',()=>{syncDashDates();renderInicio()}));
+['#dDesde','#dHasta'].forEach(s=>$(s).addEventListener('change',()=>{$('#dPer').value='custom';renderInicio()}));
+['#dDraga','#dProy'].forEach(s=>$(s).addEventListener('change',renderInicio));
+function kpiHtml(items){return items.map(([l,v,u,d,hero])=>`<div class="kpi${hero?' hero':''}"><div class="l">${l}</div><div class="v">${v==null?'—':fmt(v,d)}<small>${u}</small></div></div>`).join('')}
+function renderInicio(){
+  syncDashDates();const[desde,hasta]=[$('#dDesde').value,$('#dHasta').value];const draga=$('#dDraga').value,proyecto=$('#dProy').value;
+  const list=filtrar({desde,hasta,draga,proyecto});const k=agg(list);
+  $('#dashSub').textContent=`${fCorta(desde)} al ${fCorta(hasta)} · ${k.n} operaciones en ${k.dias} días con registro`;
+  $('#kpis').innerHTML=kpiHtml([['Volumen total dragado',k.vol,'m³',0,1],['Metros lineales acumulados',k.lin,'m',1],['Rendimiento de dragado',k.rend,'m³/h ef.',1],['Promedio diario de producción',k.prom,'m³/día',0],
+    ['Horas de acople',k.aco,'h',1],['Horas efectivas de dragado',k.efe,'h',1],['Horas de desacople',k.des,'h',1],['Horas totales de operación',k.tot,'h',1]]);
+  const ds=dragasOrd().filter(d=>!draga||d.id===draga);
+  // mensual o anual según amplitud
+  const months=[];{let y=+desde.slice(0,4),m=+desde.slice(5,7);const ye=+hasta.slice(0,4),me=+hasta.slice(5,7);while(y<ye||(y===ye&&m<=me)){months.push(`${y}-${pad(m)}`);m++;if(m>12){m=1;y++}}}
+  const byYear=months.length>24;const keys=byYear?[...new Set(months.map(x=>x.slice(0,4)))]:months;
+  $('#chMesT').textContent=byYear?'Producción anual por draga (m³)':'Producción mensual por draga (m³)';
+  const dsets=ds.map(d=>{const g=groupBy(list.filter(o=>o.dragaId===d.id),o=>byYear?o.fecha.slice(0,4):o.fecha.slice(0,7));return{label:d.nombre,backgroundColor:dColor(d.id),data:keys.map(kk=>r2(agg(g.get(kk)||[]).vol))}}).filter(x=>x.data.some(v=>v>0)||ds.length<=3);
+  $('#lgMes').innerHTML=dsets.length>1?dsets.map(d=>`<span><span class="dot" style="background:${d.backgroundColor}"></span>${esc(d.label)}</span>`).join(''):'';
+  chart('chMes',barCfg(keys.map(kk=>byYear?kk:`${MESC[+kk.slice(5)-1]} ${kk.slice(2,4)}`),dsets,'m³'));
+  // anual: todos los años del filtro (sin limitar a rango de fechas: usa draga/proyecto)
+  const all=filtrar({draga,proyecto,desde,hasta});const gy=groupBy(all,o=>o.fecha.slice(0,4));
+  const y0=+desde.slice(0,4),y1=+hasta.slice(0,4);const yrs=[];for(let y=y0;y<=y1;y++)yrs.push(String(y));
+  const yv=yrs.map(y=>r2(agg(gy.get(y)||[]).vol));let best=null;yrs.forEach((y,i)=>{if(yv[i]>0&&(best==null||yv[i]>yv[best]))best=i});
+  $('#bestYear').innerHTML=best!=null?`<div class="callout">Año de mayor producción en el período: <b>${yrs[best]}</b> con <b>${fmt(yv[best],0)} m³</b></div>`:'<div class="note" style="margin-bottom:8px">Sin producción registrada en el período.</div>';
+  chart('chAnio',barCfg(yrs,[{label:'Volumen',data:yv,backgroundColor:yrs.map((y,i)=>i===best?'#0b2e4f':PAL[0])}],'m³'));
+  const rd=dragasOrd().map(d=>({d,a:agg(list.filter(o=>o.dragaId===d.id))})).filter(x=>x.a.n);
+  chart('chRend',barCfg(rd.map(x=>x.d.nombre),[{label:'Rendimiento',data:rd.map(x=>x.a.rend==null?0:r2(x.a.rend)),backgroundColor:rd.map(x=>dColor(x.d.id))}],'m³/h',{h:true,d:2}));
+  const pp=proysOrd().map(p=>({p,a:agg(list.filter(o=>o.proyectoId===p.id))})).filter(x=>x.a.n);
+  chart('chAvance',barCfg(pp.map(x=>x.p.nombre),[{label:'Avance',data:pp.map(x=>r2(x.a.lin)),backgroundColor:PAL[2]}],'m',{h:true,d:1}));
+  const cmpRows=(rows,first)=>rows.length?`<div class="tw"><table><thead><tr><th>${first}</th><th class="n">Operaciones</th><th class="n">Volumen (m³)</th><th class="n">Lineal (m)</th><th class="n">Acople (h)</th><th class="n">Efectivas (h)</th><th class="n">Desacople (h)</th><th class="n">Total (h)</th><th class="n">Rend. (m³/h)</th><th class="n">% del volumen</th></tr></thead><tbody>${rows.map(([n,a,c])=>`<tr><td>${c?`<span class="dot" style="background:${c}"></span>`:''}${esc(n)}</td><td class="n">${a.n}</td><td class="n">${fmt(a.vol)}</td><td class="n">${fmt(a.lin)}</td><td class="n">${fmt(a.aco)}</td><td class="n">${fmt(a.efe)}</td><td class="n">${fmt(a.des)}</td><td class="n">${fmt(a.tot)}</td><td class="n">${fmt(a.rend)}</td><td class="n">${k.vol?fmt(a.vol/k.vol*100,1)+' %':'—'}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Sin operaciones en el período seleccionado.</div>';
+  $('#cmpDragas').innerHTML=cmpRows(rd.map(x=>[x.d.nombre,x.a,dColor(x.d.id)]),'Draga');
+  $('#cmpProy').innerHTML=cmpRows(pp.map(x=>[x.p.nombre,x.a]),'Proyecto');
+  $('#ultimas').innerHTML=opsTable(S.ops.slice(0,6),{compact:true});
+  bindOpRows($('#ultimas'));
+}
+
+/* ============ Tabla de operaciones ============ */
+function opsTable(list,{compact}={}){if(!list.length)return'<div class="empty">No hay operaciones registradas.</div>';
+  const desk=`<div class="tw desk"><table><thead><tr><th>Fecha</th><th>Draga</th><th>Proyecto</th>${compact?'':'<th>Turno</th>'}<th class="n">Acople</th><th class="n">Efectivas</th><th class="n">Desacople</th><th class="n">Total h</th><th class="n">Prof. (m)</th><th class="n">Ancho (m)</th><th class="n">Lineal (m)</th><th class="n">Volumen (m³)</th>${compact?'':'<th>Observaciones</th>'}${S.isAdmin&&!compact?'<th></th>':''}</tr></thead><tbody>${list.map(o=>`<tr class="click${+o.volumen===0?' zero':''}" data-op="${esc(o._owner)}|${esc(o._bucket)}|${esc(o.id)}"><td style="white-space:nowrap">${fCorta(o.fecha)}</td><td><span class="dot" style="background:${dColor(o.dragaId)}"></span>${esc(dNom(o))}</td><td>${esc(pNom(o))}</td>${compact?'':`<td>${esc(o.turno||'')}</td>`}<td class="n">${fmt(o.acople)}</td><td class="n">${fmt(o.efectivas)}</td><td class="n">${fmt(o.desacople)}</td><td class="n">${fmt(o.total)}</td><td class="n">${fmt(o.profundidad)}</td><td class="n">${fmt(o.ancho)}${o.justificacion?' <span class="badge b-warn" title="Ancho modificado">mod.</span>':''}</td><td class="n">${fmt(o.avance)}</td><td class="n vol"><b>${fmt(o.volumen)}</b></td>${compact?'':`<td><div class="obs">${esc((o.observaciones||'').slice(0,140))}${(o.observaciones||'').length>140?'…':''}</div></td>`}${S.isAdmin&&!compact?`<td style="white-space:nowrap"><button class="btn sec sm" data-act="edit">Editar</button> <button class="btn sec sm" data-act="del" style="color:var(--bad)">Eliminar</button></td>`:''}</tr>`).join('')}</tbody></table></div>`;
+  const cards=`<div class="rcards">${list.map(o=>`<div class="rc" data-op="${esc(o._owner)}|${esc(o._bucket)}|${esc(o.id)}"><div class="top"><div><b>${fCorta(o.fecha)}</b> · <span class="dot" style="background:${dColor(o.dragaId)}"></span>${esc(dNom(o))}<div class="meta">${esc(pNom(o))}${o.turno?' · '+esc(o.turno):''}</div></div><div class="vol">${fmt(o.volumen)} m³</div></div>
+    <div class="row"><div>Efectivas<b>${fmt(o.efectivas)} h</b></div><div>Total<b>${fmt(o.total)} h</b></div><div>Avance<b>${fmt(o.avance)} m</b></div><div>Prof.<b>${fmt(o.profundidad)} m</b></div><div>Ancho<b>${fmt(o.ancho)} m</b></div><div>Acople/Des.<b>${fmt(o.acople,1)}/${fmt(o.desacople,1)}</b></div></div>
+    <div class="acts"><button class="btn sec sm" data-act="ver">Ver detalle</button>${S.isAdmin&&!compact?'<button class="btn sec sm" data-act="edit">Editar</button><button class="btn sec sm" data-act="del" style="color:var(--bad)">Eliminar</button>':''}</div></div>`).join('')}</div>`;
+  return desk+cards}
+function findOp(key){const[o,b,id]=key.split('|');return S.ops.find(x=>x._owner===o&&x._bucket===b&&x.id===id)}
+function bindOpRows(root){root.onclick=e=>{const host=e.target.closest('[data-op]');if(!host)return;const op=findOp(host.dataset.op);if(!op)return;const act=e.target.closest('[data-act]');const a=act?act.dataset.act:(host.tagName==='TR'?'ver':null);
+  if(a==='ver')verOp(op);else if(a==='edit')editOp(op);else if(a==='del')delOpUI(op)}}
+function verOp(op){const row=(l,v)=>`<dt>${l}</dt><dd>${v}</dd>`;
+  openModal(`Operación del ${fCorta(op.fecha)}`,`<dl class="dl">${row('Fecha',esc(fLarga(op.fecha)))}${row('Draga',esc(dNom(op)))}${row('Proyecto',esc(pNom(op)))}${row('Turno / referencia',esc(op.turno||'—'))}${row('Responsable',esc(op.responsable||'—'))}
+  ${row('Tiempo de acople',fmt(op.acople)+' h')}${row('Horas efectivas',fmt(op.efectivas)+' h')}${row('Tiempo de desacople',fmt(op.desacople)+' h')}${row('Tiempo total',fmt(op.total)+' h')}
+  ${row('Profundidad',fmt(op.profundidad)+' m')}${row('Ancho',fmt(op.ancho)+' m'+(op.justificacion?` <span class="badge b-warn">modificado</span><br><span class="note">Ancho del proyecto: ${fmt(op.anchoProyecto)} m. ${esc(op.justificacion)}</span>`:''))}${row('Avance lineal',fmt(op.avance)+' m')}
+  ${row('Volumen',`<b>${fmt(op.volumen)} m³</b><br><span class="note">${fmt(op.ancho)} × ${fmt(op.profundidad)} × ${fmt(op.avance)}</span>`)}
+  ${row('Observaciones',`<span style="white-space:pre-wrap">${esc(op.observaciones||'—')}</span>`)}
+  ${row('Creado por',esc(nombre(op.creadoPor))+' · '+fDT(op.creadoEn))}${op.modificadoEn?row('Modificado por',esc(nombre(op.modificadoPor))+' · '+fDT(op.modificadoEn)):''}</dl>`,
+  S.isAdmin?[{t:'Eliminar',c:'sec',fn:()=>{setTimeout(()=>delOpUI(op),0)}},{t:'Editar',c:'pri',fn:()=>{editOp(op)}}]:[{t:'Cerrar',c:'pri'}])}
+function delOpUI(op){if(!S.isAdmin)return;confirmar('Eliminar operación',`¿Eliminar la operación del <b>${fCorta(op.fecha)}</b> de la draga <b>${esc(dNom(op))}</b> (${fmt(op.volumen)} m³)? Esta acción queda registrada en el historial de modificaciones y no se puede deshacer.`,'Eliminar',async()=>{
+  await saveRecord('op',op.id,'del',{fecha:op.fecha,dragaId:op.dragaId,volumen:op.volumen});toast('Operación eliminada','ok')})}
+const strip=o=>{const c=Object.assign({},o);delete c._owner;delete c._bucket;return c};
+
+/* ============ REGISTRAR ============ */
+const OBS=['Avería mecánica','Problema eléctrico','Condiciones climáticas','Mantenimiento preventivo','Mantenimiento correctivo','Problema con tuberías','Maniobra de acople','Tiempo muerto','Interrupción operativa','Otra observación'];
+$('#obsChips').innerHTML=OBS.map(o=>`<button type="button" class="chip">${o}</button>`).join('');
+$('#obsChips').onclick=e=>{const c=e.target.closest('.chip');if(!c)return;const t=$('#fObs');t.value=(t.value&&!t.value.endsWith('\n')?t.value+'\n':t.value)+`[${c.textContent}] `;t.focus()};
+function proyAncho(){const p=S.proyectos[$('#fProy').value];return p?+p.ancho:NaN}
+function onProyChange(){if(!$('#anchoChk').checked){const a=proyAncho();$('#fAncho').value=isNaN(a)?'':a.toFixed(2)}$('#anchoHint').textContent=isNaN(proyAncho())?'Se carga desde el proyecto':`Ancho del proyecto: ${fmt(proyAncho())} m`;recalc()}
+$('#fProy').addEventListener('change',onProyChange);
+$('#anchoChk').addEventListener('change',()=>{const on=$('#anchoChk').checked;$('#fAncho').readOnly=!on;$('#justWrap').classList.toggle('hidden',!on);if(!on){onProyChange()}else $('#fAncho').focus()});
+['#fAco','#fEfe','#fDes','#fProf','#fAv','#fAncho'].forEach(s=>$(s).addEventListener('input',recalc));
+function recalc(){const a=parseHoras($('#fAco').value),e=parseHoras($('#fEfe').value),d=parseHoras($('#fDes').value);
+  const tt=[a,e,d].map(x=>isNaN(x)?0:x).reduce((x,y)=>x+y,0);$('#fTot').value=tt?tt.toFixed(2)+' h':'';
+  const A=parseNum($('#fAncho').value),P=parseNum($('#fProf').value),L=parseNum($('#fAv').value);
+  if([A,P,L].every(x=>!isNaN(x))){const V=A*P*L;$('#fVol').innerHTML=`${fmt(V)}<small>m³</small>`;$('#fFormula').textContent=`${fmt(A)} m × ${fmt(P)} m × ${fmt(L)} m = ${fmt(V)} m³`}
+  else{$('#fVol').innerHTML=`0.00<small>m³</small>`;$('#fFormula').textContent='Ingrese ancho, profundidad y avance'}}
+function setErr(f,msg){const el=$(`[data-f="${f}"]`);if(!el)return;el.classList.toggle('err',!!msg);const m=el.querySelector('.emsg');if(m)m.textContent=msg||''}
+function resetForm(){S.editing=null;$('#opForm').reset();$$('#opForm .fld.err').forEach(x=>x.classList.remove('err'));$('#fFecha').value=hoy();$('#fFecha').max=hoy();
+  $('#fResp').value=(S.me&&S.me.name)||'';$('#fTitle').textContent='Registrar operación';$('#fSub').textContent='Complete los datos de la operación diaria. El volumen se calcula automáticamente.';
+  $('#fCancel').classList.add('hidden');$('#fSave').textContent='Guardar operación';$('#anchoChk').checked=false;$('#fAncho').readOnly=true;$('#justWrap').classList.add('hidden');$('#anchoChkL').classList.toggle('hidden',!S.isAdmin);
+  fillCatalogSelects();const act=dragasOrd().filter(d=>d.activa!==false);if(act.length===1)$('#fDraga').value=act[0].id;onProyChange()}
+function editOp(op){if(!S.isAdmin)return;S.editing=op;location.hash='#registrar';setTimeout(()=>{fillCatalogSelects();
+  $('#fTitle').textContent='Editar operación';$('#fSub').textContent=`Registrada por ${nombre(op.creadoPor)} el ${fDT(op.creadoEn)}. Los cambios quedan en el historial de modificaciones.`;
+  $('#fFecha').value=op.fecha;$('#fDraga').value=op.dragaId;$('#fProy').value=op.proyectoId;$('#fTurno').value=op.turno||'';$('#fResp').value=op.responsable||'';
+  $('#fAco').value=op.acople;$('#fEfe').value=op.efectivas;$('#fDes').value=op.desacople;$('#fProf').value=op.profundidad;$('#fAv').value=op.avance;$('#fObs').value=op.observaciones||'';
+  $('#anchoChkL').classList.remove('hidden');const mod=!!op.justificacion||Math.abs(+op.ancho-proyAncho())>1e-9;$('#anchoChk').checked=mod;$('#fAncho').readOnly=!mod;$('#justWrap').classList.toggle('hidden',!mod);$('#fJust').value=op.justificacion||'';
+  $('#fAncho').value=(+op.ancho).toFixed(2);$('#anchoHint').textContent=`Ancho del proyecto: ${fmt(proyAncho())} m · valor histórico conservado`;
+  $('#fCancel').classList.remove('hidden');$('#fSave').textContent='Guardar cambios';recalc()},0)}
+$('#fCancel').onclick=()=>{const was=S.editing;resetForm();location.hash=was?'#historial':'#inicio'};
+$('#fClear').onclick=()=>{if(S.editing){editOp(S.editing)}else resetForm()};
+$('#opForm').addEventListener('submit',async e=>{e.preventDefault();if(!S.canWrite){toast('Su usuario no tiene permiso para registrar operaciones.','bad');return}
+  $$('#opForm .fld.err').forEach(x=>x.classList.remove('err'));let ok=true;const bad=(f,m)=>{setErr(f,m);ok=false};
+  const fecha=$('#fFecha').value,dragaId=$('#fDraga').value,proyectoId=$('#fProy').value,turno=$('#fTurno').value.trim(),responsable=$('#fResp').value.trim();
+  if(!fecha||!/^\d{4}-\d{2}-\d{2}$/.test(fecha))bad('fecha','Indique la fecha.');else if(fecha>hoy())bad('fecha','La fecha no puede ser futura.');
+  if(!dragaId)bad('draga','Seleccione la draga.');if(!proyectoId)bad('proyecto','Seleccione el proyecto.');if(!responsable)bad('responsable','Indique el responsable.');
+  const H={};[['acople','#fAco'],['efectivas','#fEfe'],['desacople','#fDes']].forEach(([f,s])=>{const raw=$(s).value.trim();const v=parseHoras(raw);
+    if(raw==='')bad(f,'Campo obligatorio (use 0 si no aplica).');else if(isNaN(v))bad(f,'Valor no válido. Use decimales, p. ej. 2.5');else if(v<0)bad(f,'No se permiten valores negativos.');else if(v>24)bad(f,'No puede exceder 24 horas.');H[f]=r2(v)});
+  const total=r2((H.acople||0)+(H.efectivas||0)+(H.desacople||0));if(ok&&total>24)bad('total','El tiempo total de un registro no puede exceder 24 horas.');
+  const P=parseNum($('#fProf').value),L=parseNum($('#fAv').value),A=parseNum($('#fAncho').value);
+  if(isNaN(P))bad('profundidad','Indique una profundidad válida.');else if(P<=0)bad('profundidad','Debe ser mayor que cero.');else if(P>60)bad('profundidad','Valor fuera de rango (máx. 60 m).');
+  if(isNaN(L))bad('avance','Indique el avance lineal.');else if(L<0)bad('avance','No se permiten valores negativos.');
+  if(isNaN(A)||A<=0)bad('ancho','El ancho debe ser mayor que cero. Revise la configuración del proyecto.');
+  const anchoMod=$('#anchoChk').checked&&S.isAdmin;const just=$('#fJust').value.trim();if(anchoMod&&Math.abs(A-proyAncho())>1e-9&&!just)bad('justificacion','La justificación técnica es obligatoria.');
+  if(!ok){toast('Revise los campos marcados.','bad');const f=$('#opForm .fld.err');f&&f.scrollIntoView({behavior:'smooth',block:'center'});return}
+  const pr=S.proyectos[proyectoId]||{},dr=S.dragas[dragaId]||{};const now=new Date().toISOString();const ed=S.editing;
+  const op={id:ed?ed.id:rid('op_'),fecha,dragaId,dragaNombre:dr.nombre||'',proyectoId,proyectoNombre:pr.nombre||'',turno,responsable,acople:H.acople,efectivas:H.efectivas,desacople:H.desacople,total,
+    profundidad:r2(P),avance:r2(L),ancho:r2(A),anchoProyecto:r2(+pr.ancho||A),justificacion:(anchoMod&&Math.abs(A-(+pr.ancho))>1e-9)?just:'',volumen:r2(A*P*L),observaciones:$('#fObs').value.trim(),
+    creadoPor:ed?ed.creadoPor:S.uid,creadoEn:ed?ed.creadoEn:now};
+  if(ed){op.modificadoPor=S.uid;op.modificadoEn=now;op.anchoProyecto=ed.justificacion||Math.abs(+ed.ancho-A)>1e-9?op.anchoProyecto:ed.anchoProyecto??op.anchoProyecto}
+  if(!ed&&!S.isAdmin){op.ancho=r2(+pr.ancho);op.volumen=r2(op.ancho*op.profundidad*op.avance)}
+  const btn=$('#fSave');btn.disabled=true;btn.textContent='Guardando…';
+  try{await saveRecord('op',op.id,'set',op);
+    toast(ed?'Cambios guardados':`Operación guardada: ${fmt(op.volumen)} m³`,'ok');
+    const back=!!ed;resetForm();if(back)location.hash='#historial';
+  }catch(err){toast(errMsg(err),'bad')}finally{btn.disabled=false;btn.textContent=S.editing?'Guardar cambios':'Guardar operación'}});
+
+/* ============ HISTORIAL ============ */
+function histList(){const q=$('#hQ').value.trim().toLowerCase();let l=filtrar({desde:$('#hDesde').value,hasta:$('#hHasta').value,draga:$('#hDraga').value,proyecto:$('#hProy').value});
+  if(q)l=l.filter(o=>[o.turno,o.responsable,o.observaciones,dNom(o),pNom(o),fCorta(o.fecha),o.justificacion].join(' ').toLowerCase().includes(q));
+  if($('#hOrd').value==='asc')l=l.slice().reverse();return l}
+function renderHist(){const l=histList();const k=agg(l);$('#hSub').textContent=`${S.ops.length} operaciones en total`;
+  $('#hTotals').innerHTML=`<b>${l.length}</b> registros · Volumen <b>${fmt(k.vol)} m³</b> · Lineal <b>${fmt(k.lin)} m</b> · Horas efectivas <b>${fmt(k.efe)}</b> · Rendimiento <b>${fmt(k.rend)} m³/h</b>`;
+  const shown=l.slice(0,S.histLimit);const html=opsTable(shown);const tmp=document.createElement('div');tmp.innerHTML=html;
+  $('#hTable').innerHTML=tmp.querySelector('.desk')?tmp.querySelector('.desk').outerHTML:html;$('#hCards').innerHTML=tmp.querySelector('.rcards')?tmp.querySelector('.rcards').innerHTML:'';
+  $('#hMore').classList.toggle('hidden',l.length<=S.histLimit);$('#hMore').textContent=`Mostrar más (${l.length-shown.length} restantes)`}
+bindOpRows($('#hTable'));bindOpRows($('#hCards'));
+['#hQ','#hDesde','#hHasta','#hDraga','#hProy','#hOrd'].forEach(s=>$(s).addEventListener(s==='#hQ'?'input':'change',()=>{S.histLimit=100;renderHist()}));
+$('#hMore').onclick=()=>{S.histLimit+=200;renderHist()};
+$('#hReset').onclick=()=>{['#hQ','#hDesde','#hHasta','#hDraga','#hProy'].forEach(s=>$(s).value='');$('#hOrd').value='desc';renderHist()};
+$('#hCsv').onclick=()=>exportCsv(histList(),'historial_operaciones');
+$('#hXlsx').onclick=()=>{const l=histList();exportXlsx({titulo:'Historial de operaciones',periodo:periodoTxt($('#hDesde').value,$('#hHasta').value),alcance:alcTxt($('#hDraga').value,$('#hProy').value),kpis:kpisArr(agg(l)),tablas:[],detalle:l},'historial_operaciones')};
+function periodoTxt(a,b){return a||b?`${a?fCorta(a):'inicio'} al ${b?fCorta(b):'hoy'}`:'Todo el historial'}
+function alcTxt(d,p){const x=[];x.push(d?'Draga: '+(S.dragas[d]||{}).nombre:'Todas las dragas');x.push(p?'Proyecto: '+(S.proyectos[p]||{}).nombre:'Todos los proyectos');return x.join(' · ')}
+
+/* ============ INFORMES ============ */
+function repCtlSync(){const t=$('#rTipo').value;$$('#repCtl [data-r]').forEach(el=>el.classList.toggle('hidden',!el.dataset.r.split(' ').includes(t)));$('#rFechaL').textContent=t==='semanal'?'Cualquier día de la semana':'Fecha';
+  const a=$('#rAlc').value;$('#rObjW').classList.toggle('hidden',a==='todo');$('#rObjL').textContent=a==='draga'?'Draga':'Proyecto';$('#rFiltW').classList.toggle('hidden',a!=='draga');
+  if(a==='draga')fillSel('#rObj',dragasOrd().map(d=>({id:d.id,nombre:d.nombre})));else if(a==='proyecto')fillSel('#rObj',proysOrd().map(p=>({id:p.id,nombre:p.nombre})))}
+$('#rTipo').addEventListener('change',repCtlSync);$('#rAlc').addEventListener('change',repCtlSync);
+(()=>{const t=new Date();$('#rFecha').value=hoy();$('#rMes').value=`${t.getFullYear()}-${pad(t.getMonth()+1)}`;$('#rHasta').value=hoy();$('#rDesde').value=`${t.getFullYear()}-01-01`;repCtlSync()})();
+$('#rGen').onclick=()=>{S.rep={};genReport(false)};
+const AGG_COLS=f=>[{h:f},{h:'Registros',d:0},{h:'Acople (h)',d:2},{h:'Efectivas (h)',d:2},{h:'Desacople (h)',d:2},{h:'Total (h)',d:2},{h:'Lineal (m)',d:2},{h:'Volumen (m³)',d:2},{h:'Rend. (m³/h)',d:2}];
+function aggRow(label,list){if(!list||!list.length)return{c:[label,'Sin registro',null,null,null,null,null,null,null],vacia:true};const a=agg(list);return{c:[label,a.n,a.aco,a.efe,a.des,a.tot,a.lin,a.vol,a.rend],zero:a.vol===0}}
+function totRow(list){const a=agg(list);return{c:['TOTAL',a.n,a.aco,a.efe,a.des,a.tot,a.lin,a.vol,a.rend]}}
+function kpisArr(k){return[['Volumen total','m³',k.vol,2],['Metros lineales','m',k.lin,2],['Horas de acople','h',k.aco,2],['Horas efectivas','h',k.efe,2],['Horas de desacople','h',k.des,2],['Horas totales','h',k.tot,2],['Rendimiento','m³/h ef.',k.rend,2],['Promedio diario','m³/día',k.prom,2],['Operaciones','',k.n,0],['Días con registro','',k.dias,0]]}
+function genReport(silent){const t=$('#rTipo').value,alc=$('#rAlc').value,obj=$('#rObj').value;
+  if(alc!=='todo'&&!obj){if(!silent)toast(`Seleccione ${alc==='draga'?'la draga':'el proyecto'}.`,'bad');return}
+  let desde,hasta,titulo,periodo;const yNow=new Date().getFullYear();
+  if(t==='diario'){desde=hasta=$('#rFecha').value||hoy();titulo='Informe diario de operaciones';periodo=fLarga(desde)}
+  else if(t==='semanal'){desde=lunes($('#rFecha').value||hoy());hasta=addDays(desde,6);titulo='Informe semanal de operaciones';periodo=`Semana del ${fCorta(desde)} al ${fCorta(hasta)}`}
+  else if(t==='mensual'){const m=$('#rMes').value||hoy().slice(0,7);desde=m+'-01';hasta=finMes(+m.slice(0,4),+m.slice(5,7));titulo='Informe mensual de producción';periodo=`${MESES[+m.slice(5,7)-1]} de ${m.slice(0,4)}`}
+  else if(t==='anual'){const y=$('#rAnio').value||yNow;desde=`${y}-01-01`;hasta=`${y}-12-31`;titulo='Informe anual de producción';periodo=`Año ${y}`}
+  else if(t==='rango'){desde=$('#rDesde').value;hasta=$('#rHasta').value;if(!desde||!hasta||desde>hasta){if(!silent)toast('Indique un rango de fechas válido.','bad');return}titulo='Informe por rango de fechas';periodo=`Del ${fCorta(desde)} al ${fCorta(hasta)}`}
+  else{let a1=+$('#rA1').value,a2=+$('#rA2').value;if(a1>a2)[a1,a2]=[a2,a1];desde=`${a1}-01-01`;hasta=`${a2}-12-31`;titulo=`Comparación de producción ${a1}–${a2} (${a2-a1+1} años)`;periodo=`Años ${a1} a ${a2}`}
+  const draga=alc==='draga'?obj:'',proyecto=alc==='proyecto'?obj:(alc==='draga'?$('#rProyF').value:'');
+  const alcance=alc==='todo'?'Consolidado: todas las dragas y proyectos':alc==='draga'?`Draga: ${(S.dragas[obj]||{}).nombre}${proyecto?' · Proyecto: '+(S.proyectos[proyecto]||{}).nombre:''}`:`Proyecto: ${(S.proyectos[obj]||{}).nombre}`;
+  const list=filtrar({desde,hasta,draga,proyecto}).slice().sort((a,b)=>a.fecha<b.fecha?-1:a.fecha>b.fecha?1:String(a.turno||'').localeCompare(String(b.turno||'')));
+  const k=agg(list);const R={tipo:t,titulo,periodo,alcance,desde,hasta,kpis:kpisArr(k),tablas:[],detalle:list,generado:new Date().toISOString(),chart:null,nota:''};
+  const porDraga=()=>{const ds=dragasOrd().filter(d=>!draga||d.id===draga);const g=groupBy(list,o=>o.dragaId);const rows=ds.map(d=>aggRow(d.nombre,g.get(d.id))).filter(r=>!r.vacia||ds.length<=4);return{titulo:'Producción por draga',cols:AGG_COLS('Draga'),rows,total:totRow(list)}};
+  const porProy=()=>{const g=groupBy(list,o=>o.proyectoId);const rows=[...g.keys()].map(id=>aggRow((S.proyectos[id]||{}).nombre||g.get(id)[0].proyectoNombre,g.get(id)));return{titulo:'Producción por proyecto',cols:AGG_COLS('Proyecto'),rows,total:totRow(list)}};
+  const diario=()=>{const g=groupBy(list,o=>o.fecha);const ds=dias(desde,hasta);return{titulo:'Resumen diario (los días sin registro se distinguen de los días con producción cero)',cols:AGG_COLS('Día'),rows:ds.map(d=>aggRow(`${DIAS[pymd(d).getDay()].slice(0,3)} ${fCorta(d)}`,g.get(d))),total:totRow(list),_keys:ds,_g:g}};
+  const mensual=()=>{const g=groupBy(list,o=>o.fecha.slice(0,7));const ms=[];let y=+desde.slice(0,4),m=+desde.slice(5,7);while(`${y}-${pad(m)}`<=hasta.slice(0,7)){ms.push(`${y}-${pad(m)}`);m++;if(m>12){m=1;y++}}return{titulo:'Resumen mensual',cols:AGG_COLS('Mes'),rows:ms.map(x=>aggRow(`${MESES[+x.slice(5)-1]} ${x.slice(0,4)}`,g.get(x))),total:totRow(list),_keys:ms,_g:g}};
+  const matriz=(keyFn,keys,lab)=>{const ds=dragasOrd().filter(d=>!draga||d.id===draga);const cols=[{h:lab},...ds.map(d=>({h:d.nombre+' (m³)',d:2})),{h:'Total (m³)',d:2}];
+    const rows=keys.map(([kk,l])=>{const sub=list.filter(o=>keyFn(o)===kk);if(!sub.length)return{c:[l,'Sin registro',...ds.map(()=>null)],vacia:true};return{c:[l,...ds.map(d=>agg(sub.filter(o=>o.dragaId===d.id)).vol),agg(sub).vol]}});
+    return{titulo:`Volumen por draga y ${lab.toLowerCase()}`,cols,rows,total:{c:['TOTAL',...ds.map(d=>agg(list.filter(o=>o.dragaId===d.id)).vol),k.vol]}}};
+  let main;
+  if(t==='diario'){R.tablas.push(porDraga());if(!draga)R.tablas.push(porProy())}
+  else if(t==='semanal'){main=diario();R.tablas.push(main,porDraga());R.kpis.push(['Promedio diario lineal','m/día',k.promLin,2],['Promedio diario h. efectivas','h/día',k.promEfe,2])}
+  else if(t==='mensual'){R.tablas.push(porDraga());main=diario();R.tablas.push(main);if(!proyecto)R.tablas.push(porProy())}
+  else if(t==='anual'){main=mensual();R.tablas.push(main,porDraga(),matriz(o=>o.fecha.slice(0,7),main._keys.map(x=>[x,MESES[+x.slice(5)-1]]),'Mes'));if(!proyecto)R.tablas.push(porProy())}
+  else if(t==='rango'){main=dias(desde,hasta).length<=62?diario():mensual();R.tablas.push(main,porDraga());if(!proyecto)R.tablas.push(porProy())}
+  else{const g=groupBy(list,o=>o.fecha.slice(0,4));const ys=[];for(let y=+desde.slice(0,4);y<=+hasta.slice(0,4);y++)ys.push(String(y));
+    main={titulo:'Producción por año',cols:AGG_COLS('Año'),rows:ys.map(y=>aggRow(y,g.get(y))),total:totRow(list),_keys:ys,_g:g};
+    let best=null;ys.forEach(y=>{const v=agg(g.get(y)||[]).vol;if(v>0&&(best==null||v>best.v))best={y,v}});R.nota=best?`Año de mayor producción: ${best.y} con ${fmt(best.v)} m³.`:'Sin producción en el período.';R.best=best&&best.y;
+    R.tablas.push(main,matriz(o=>o.fecha.slice(0,4),ys.map(y=>[y,y]),'Año'),porDraga());if(!proyecto)R.tablas.push(porProy())}
+  // gráfico
+  if(main){const labels=main._keys.map(x=>x.length===10?fCorta(x).slice(0,5):x.length===7?`${MESC[+x.slice(5)-1]} ${x.slice(2,4)}`:x);
+    R.chart={labels,data:main._keys.map(x=>r2(agg(main._g.get(x)||[]).vol)),best:R.best?main._keys.indexOf(R.best):-1}}
+  else if(R.tablas[0]){const tb=R.tablas[0];R.chart={labels:tb.rows.map(r=>r.c[0]),data:tb.rows.map(r=>r2(r.c[7]||0)),best:-1}}
+  R.obs=list.filter(o=>o.observaciones);S.rep=R;renderReport(R)}
+function cell(v,col){if(col.d===undefined)return esc(v);if(v==null)return'—';if(typeof v==='string')return esc(v);return fmt(v,col.d)}
+function tablaHtml(tb){return`<div class="tabtitle">${esc(tb.titulo)}</div><div class="tw"><table><thead><tr>${tb.cols.map(c=>`<th class="${c.d!==undefined?'n':''}">${esc(c.h)}</th>`).join('')}</tr></thead><tbody>${tb.rows.map(r=>`<tr class="${r.vacia?'vac':''}${r.zero?' zero':''}">${r.c.map((v,i)=>`<td class="${tb.cols[i]&&tb.cols[i].d!==undefined?'n':''}${i===7&&tb.cols.length===9?' vol':''}">${r.vacia&&i===1?'Sin registro':cell(v,tb.cols[i]||{})}</td>`).join('')}</tr>`).join('')}${tb.total?`<tr class="tot">${tb.total.c.map((v,i)=>`<td class="${tb.cols[i].d!==undefined?'n':''}">${cell(v,tb.cols[i])}</td>`).join('')}</tr>`:''}</tbody></table></div>`}
+function renderReport(R){const det=R.detalle;const lim=400;
+  $('#repOut').innerHTML=`<div class="card"><div class="ch" style="align-items:flex-start"><div class="rephead"><div class="org">Administración Portuaria Bluff · Bluefields, Nicaragua</div><h2>${esc(R.titulo)}</h2><div class="meta">${esc(R.periodo)} · ${esc(R.alcance)}<br>Generado el ${fDT(R.generado)}</div></div>
+   <div class="btnrow"><button class="btn sec sm" data-x="xlsx">Excel</button><button class="btn sec sm" data-x="csv">CSV</button><button class="btn pri sm" data-x="pdf">PDF</button></div></div>
+   ${R.nota?`<div class="callout">${esc(R.nota)}</div>`:''}
+   <div class="kpis">${kpiHtml(R.kpis.slice(0,8).map(([l,u,v,d],i)=>[l,v,u,d,i===0]))}</div>
+   ${R.chart&&R.chart.data.length?`<div class="tabtitle">Volumen dragado (m³)</div><div class="chartbox"><canvas id="chRep"></canvas></div>`:''}
+   ${R.tablas.map(tablaHtml).join('')}
+   <div class="tabtitle">Detalle de operaciones (${det.length})</div>${det.length?opsTable(det.slice(0,lim)):'<div class="empty">No hay operaciones registradas en este período.</div>'}${det.length>lim?`<p class="note">Se muestran ${lim} de ${det.length} operaciones. Las exportaciones incluyen todas.</p>`:''}
+   ${R.obs.length?`<div class="tabtitle">Observaciones e incidencias (${R.obs.length})</div><div class="tw"><table><thead><tr><th>Fecha</th><th>Draga</th><th>Observación</th></tr></thead><tbody>${R.obs.slice(0,300).map(o=>`<tr><td style="white-space:nowrap">${fCorta(o.fecha)}</td><td>${esc(dNom(o))}</td><td style="white-space:pre-wrap">${esc(o.observaciones)}</td></tr>`).join('')}</tbody></table></div>`:''}</div>`;
+  bindOpRows($('#repOut'));
+  $('#repOut').querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{const x=b.dataset.x;const fn=`informe_${R.tipo}_${R.desde}${R.hasta!==R.desde?'_'+R.hasta:''}`;if(x==='csv')exportCsv(R.detalle,fn);else if(x==='xlsx')exportXlsx(R,fn);else exportPdf(R,fn)});
+  if(R.chart&&R.chart.data.length)chart('chRep',barCfg(R.chart.labels,[{label:'Volumen',data:R.chart.data,backgroundColor:R.chart.labels.map((l,i)=>i===R.chart.best?'#0b2e4f':PAL[0])}],'m³'))}
+
+/* ============ Exportación ============ */
+const DET_COLS=[['Fecha',o=>fCorta(o.fecha)],['Draga',dNom],['Proyecto',pNom],['Turno',o=>o.turno||''],['Responsable',o=>o.responsable||''],['Acople (h)',o=>+o.acople],['Efectivas (h)',o=>+o.efectivas],['Desacople (h)',o=>+o.desacople],['Total (h)',o=>+o.total],['Profundidad (m)',o=>+o.profundidad],['Ancho (m)',o=>+o.ancho],['Lineal (m)',o=>+o.avance],['Volumen (m³)',o=>+o.volumen],['Observaciones',o=>o.observaciones||''],['Justificación ancho',o=>o.justificacion||''],['Creado por',o=>nombre(o.creadoPor)],['Creado el',o=>fDT(o.creadoEn)],['Modificado por',o=>o.modificadoPor?nombre(o.modificadoPor):''],['Modificado el',o=>fDT(o.modificadoEn)]];
+async function save(filename,data){const blob=data instanceof Blob?data:new Blob([data]);
+  try{const file=new File([blob],filename,{type:blob.type||'application/octet-stream'});if((IOS||STANDALONE)&&navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:filename});return}catch(e){if(e&&e.name==='AbortError')return}}}catch(e){}
+  const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(u);a.remove()},5000);toast('Archivo descargado: '+filename,'ok')}
+function exportCsv(list,name){if(!list.length){toast('No hay registros para exportar.','bad');return}
+  const q=v=>{const s=typeof v==='number'?String(v):String(v??'');return /[",\n\r]/.test(s)?`"${s.replace(/"/g,'""')}"`:s};
+  const lines=[DET_COLS.map(c=>q(c[0])).join(',')].concat(list.map(o=>DET_COLS.map(c=>{const v=c[1](o);return q(typeof v==='number'?r2(v):v)}).join(',')));
+  save(name+'.csv',new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv'}))}
+function exportXlsx(R,name){if(!window.XLSX){toast('No se pudo cargar el componente de Excel.','bad');return}
+  const wb=XLSX.utils.book_new();const head=[['Administración Portuaria Bluff – Bluefields, Nicaragua'],['Sistema de Control de Operaciones de Dragado'],[],['Informe',R.titulo],['Período',R.periodo],['Alcance',R.alcance],['Generado',fDT(R.generado||new Date().toISOString())],[]];
+  if(R.nota)head.push([R.nota],[]);head.push(['Indicador','Valor','Unidad']);(R.kpis||[]).forEach(([l,u,v])=>head.push([l,v==null?'':r2(v),u]));
+  const ws0=XLSX.utils.aoa_to_sheet(head);ws0['!cols']=[{wch:32},{wch:44},{wch:12}];XLSX.utils.book_append_sheet(wb,ws0,'Resumen');
+  const used=new Set(['Resumen']);(R.tablas||[]).forEach(tb=>{const aoa=[tb.cols.map(c=>c.h)].concat(tb.rows.map(r=>r.c.map((v,i)=>r.vacia&&i===1?'Sin registro':(typeof v==='number'?r2(v):(v??''))))).concat(tb.total?[tb.total.c.map(v=>typeof v==='number'?r2(v):v)]:[]);
+    let nm=tb.titulo.replace(/\(.*\)/,'').replace(/[\\/?*\[\]:]/g,'').trim().slice(0,31);let i=2;while(used.has(nm))nm=nm.slice(0,28)+' '+i++;used.add(nm);const ws=XLSX.utils.aoa_to_sheet(aoa);ws['!cols']=tb.cols.map((c,i)=>({wch:i===0?24:15}));XLSX.utils.book_append_sheet(wb,ws,nm)});
+  const det=[DET_COLS.map(c=>c[0])].concat((R.detalle||[]).map(o=>DET_COLS.map(c=>{const v=c[1](o);return typeof v==='number'?r2(v):v})));const wsd=XLSX.utils.aoa_to_sheet(det);wsd['!cols']=DET_COLS.map((c,i)=>({wch:[12,16,26,12,20].concat(Array(8).fill(13),[50,30,20,16,20,16])[i]||14}));XLSX.utils.book_append_sheet(wb,wsd,'Detalle de operaciones');
+  const buf=XLSX.write(wb,{bookType:'xlsx',type:'array'});save(name+'.xlsx',new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}))}
+const pS=s=>String(s??'').replace(/[—–]/g,'-').replace(/[“”]/g,'"').replace(/[‘’]/g,"'").replace(/…/g,'...').replace(/→/g,'->').replace(/[^\x00-\xFF\n]/g,'');
+function exportPdf(R,name){if(!window.jspdf){toast('No se pudo cargar el componente PDF.','bad');return}
+  const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});const W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight();const NAVY=[11,46,79];
+  const header=()=>{doc.setFillColor(...NAVY);doc.rect(0,0,W,20,'F');doc.setFillColor(15,124,140);doc.rect(0,20,W,1.2,'F');doc.setTextColor(255);doc.setFont('helvetica','bold');doc.setFontSize(12);doc.text('ADMINISTRACIÓN PORTUARIA BLUFF',14,9.5);doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.text('Bluefields, Nicaragua  ·  Sistema de Control de Operaciones de Dragado',14,15);doc.text('Generado: '+fDT(R.generado),W-14,9.5,{align:'right'})};
+  header();doc.setTextColor(...NAVY);doc.setFont('helvetica','bold');doc.setFontSize(16);doc.text(pS(R.titulo),14,32);
+  doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(70,85,100);doc.text(pS('Período: '+R.periodo),14,39);doc.text(pS(R.alcance),14,44.5);let y=50;
+  if(R.nota){doc.setFillColor(253,241,220);doc.roundedRect(14,y-1,W-28,8,1.5,1.5,'F');doc.setTextColor(107,65,0);doc.setFont('helvetica','bold');doc.text(pS(R.nota),17,y+4.2);doc.setFont('helvetica','normal');y+=11}
+  const kp=R.kpis.slice(0,8);doc.autoTable({startY:y,head:[kp.map(k=>pS(k[0]))],body:[kp.map(k=>k[2]==null?'-':pS(fmt(k[2],k[3])+' '+k[1]))],theme:'grid',styles:{fontSize:8.5,halign:'center',cellPadding:2.2},headStyles:{fillColor:[227,242,244],textColor:NAVY,fontStyle:'bold'},bodyStyles:{fontStyle:'bold',fontSize:10},margin:{left:14,right:14}});
+  y=doc.lastAutoTable.finalY+6;
+  if(charts.chRep&&R.chart&&R.chart.data.length){try{const img=charts.chRep.toBase64Image('image/png',1);const ch=Math.min(62,(W-28)*charts.chRep.height/charts.chRep.width);if(y+ch+8>H-14){doc.addPage();header();y=28}doc.setTextColor(...NAVY);doc.setFont('helvetica','bold');doc.setFontSize(10.5);doc.text('Volumen dragado (m³)',14,y+3);doc.addImage(img,'PNG',14,y+5,W-28,ch);y+=ch+10}catch(e){}}
+  const tabla=(titulo,cols,body,opts={})=>{if(y>H-40){doc.addPage();header();y=28}doc.setTextColor(...NAVY);doc.setFont('helvetica','bold');doc.setFontSize(10.5);doc.text(pS(titulo),14,y+3);
+    doc.autoTable(Object.assign({startY:y+5,head:[cols.map(pS)],body,theme:'grid',styles:{fontSize:7.6,cellPadding:1.6,overflow:'linebreak'},headStyles:{fillColor:NAVY,textColor:255,fontStyle:'bold'},alternateRowStyles:{fillColor:[247,249,250]},margin:{left:14,right:14,top:26},didDrawPage:d=>{if(d.pageNumber>1||doc.internal.getNumberOfPages()>1)header()}},opts));y=doc.lastAutoTable.finalY+8};
+  R.tablas.forEach(tb=>{const body=tb.rows.map(r=>r.c.map((v,i)=>r.vacia&&i===1?'Sin registro':(tb.cols[i].d===undefined||typeof v==='string'?pS(v??''):v==null?'-':fmt(v,tb.cols[i].d))));const tr=tb.total?tb.total.c.map((v,i)=>tb.cols[i].d===undefined||typeof v==='string'?pS(v):v==null?'-':fmt(v,tb.cols[i].d)):null;
+    const vacIdx=new Set(tb.rows.map((r,i)=>r.vacia?i:-1).filter(i=>i>=0));
+    tabla(tb.titulo,tb.cols.map(c=>c.h),tr?body.concat([tr]):body,{columnStyles:Object.fromEntries(tb.cols.map((c,i)=>[i,{halign:c.d!==undefined?'right':'left'}])),didParseCell:d=>{if(d.section!=='body')return;if(vacIdx.has(d.row.index)){d.cell.styles.textColor=[140,150,160];d.cell.styles.fontStyle='italic'}if(tr&&d.row.index===body.length){d.cell.styles.fontStyle='bold';d.cell.styles.fillColor=[234,238,242]}}})});
+  const dc=['Fecha','Draga','Proyecto','Turno','Acople h','Efect. h','Desac. h','Total h','Prof. m','Ancho m','Lineal m','Volumen m³'];
+  const db=R.detalle.map(o=>[fCorta(o.fecha),pS(dNom(o)),pS(pNom(o)),pS(o.turno||''),fmt(o.acople),fmt(o.efectivas),fmt(o.desacople),fmt(o.total),fmt(o.profundidad),fmt(o.ancho),fmt(o.avance),fmt(o.volumen)]);
+  if(db.length){const a=agg(R.detalle);db.push(['TOTAL','','','',fmt(a.aco),fmt(a.efe),fmt(a.des),fmt(a.tot),'','',fmt(a.lin),fmt(a.vol)])}
+  tabla(`Detalle de operaciones (${R.detalle.length})`,dc,db.length?db:[['Sin operaciones registradas en el período','','','','','','','','','','','']],{columnStyles:Object.fromEntries(dc.map((c,i)=>[i,{halign:i>=4?'right':'left'}])),didParseCell:d=>{if(d.section==='body'&&R.detalle.length&&d.row.index===db.length-1){d.cell.styles.fontStyle='bold';d.cell.styles.fillColor=[234,238,242]}}});
+  if(R.obs.length)tabla(`Observaciones e incidencias (${R.obs.length})`,['Fecha','Draga','Observación'],R.obs.map(o=>[fCorta(o.fecha),pS(dNom(o)),pS(o.observaciones)]),{columnStyles:{0:{cellWidth:22},1:{cellWidth:30}}});
+  const n=doc.internal.getNumberOfPages();for(let i=1;i<=n;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(120,130,140);doc.text(pS(`${R.titulo} · ${R.periodo}`),14,H-7);doc.text(`Página ${i} de ${n}`,W-14,H-7,{align:'right'})}
+  save(name+'.pdf',doc.output('blob'))}
+
+/* ============ DRAGAS ============ */
+function renderDragas(){const ds=dragasOrd();$('#dragaList').innerHTML=ds.length?ds.map(d=>{const l=S.ops.filter(o=>o.dragaId===d.id);const a=agg(l);return`<div class="cat"><div class="hd"><div><div class="nm"><span class="dot" style="background:${dColor(d.id)}"></span>${esc(d.nombre)}</div><div class="sub">${esc(d.modelo||'Modelo no indicado')}</div></div><span class="badge ${d.activa===false?'b-off':'b-ok'}">${d.activa===false?'Inactiva':'Operativa'}</span></div>
+  ${d.caracteristicas?`<div class="sub" style="white-space:pre-wrap">${esc(d.caracteristicas)}</div>`:''}
+  <dl><dt>Operaciones</dt><dd>${a.n}</dd><dt>Volumen histórico</dt><dd>${fmt(a.vol,0)} m³</dd><dt>Horas efectivas</dt><dd>${fmt(a.efe,1)} h</dd><dt>Rendimiento</dt><dd>${fmt(a.rend)} m³/h</dd><dt>Última operación</dt><dd>${l[0]?fCorta(l[0].fecha):'—'}</dd></dl>
+  <div class="acts"><button class="btn sec sm" data-hist="${esc(d.id)}">Ver historial</button><button class="btn sec sm" data-ed="${esc(d.id)}">Editar</button><button class="btn sec sm" data-tg="${esc(d.id)}">${d.activa===false?'Activar':'Desactivar'}</button></div></div>`}).join(''):'<div class="card empty">No hay dragas registradas.</div>'}
+$('#dragaList').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.hist){$('#hDraga').value=b.dataset.hist;location.hash='#historial';setTimeout(()=>{$('#hDraga').value=b.dataset.hist;renderHist()},0)}else if(b.dataset.ed)dragaForm(b.dataset.ed);else if(b.dataset.tg){const id=b.dataset.tg,d=S.dragas[id];const act=d.activa===false;
+  confirmar(act?'Activar draga':'Desactivar draga',act?`¿Activar nuevamente la draga <b>${esc(d.nombre)}</b>?`:`¿Desactivar la draga <b>${esc(d.nombre)}</b>? No aparecerá en el formulario de registro, pero su historial se conserva.`,act?'Activar':'Desactivar',async()=>{await saveRecord('draga',id,'set',Object.assign(clone(d),{activa:act,actualizado:new Date().toISOString(),actualizadoPor:S.uid}))})}};
+$('#addDraga').onclick=()=>dragaForm(null);
+function dragaForm(id){const d=id?S.dragas[id]:{activa:true};openModal(id?'Editar draga':'Agregar draga',`<div class="formgrid" style="grid-template-columns:1fr 1fr">
+  <div class="fld" data-f="dnom"><label class="req">Nombre</label><input type="text" id="xNom" maxlength="60" value="${esc(d.nombre||'')}"><span class="emsg"></span></div>
+  <div class="fld"><label>Modelo</label><input type="text" id="xMod" maxlength="80" value="${esc(d.modelo||'')}" placeholder="p. ej. Damen CSD 350"></div>
+  <div class="fld span4" style="grid-column:1/-1"><label>Características técnicas</label><textarea id="xCar" maxlength="1500" placeholder="Potencia, diámetro de tubería, profundidad máxima, año…">${esc(d.caracteristicas||'')}</textarea></div>
+  <label class="chk" style="grid-column:1/-1"><input type="checkbox" id="xAct" ${d.activa!==false?'checked':''}> Draga operativa</label></div>`,
+  [{t:'Cancelar',c:'sec'},{t:'Guardar',c:'pri',fn:async()=>{const nom=$('#xNom').value.trim();if(!nom){setErr('dnom','Indique el nombre.');return false}
+    if(Object.entries(S.dragas).some(([k,v])=>k!==id&&String(v.nombre).toLowerCase()===nom.toLowerCase())){setErr('dnom','Ya existe una draga con ese nombre.');return false}
+    const nid=id||rid('d_');const data=Object.assign(clone(d),{nombre:nom,modelo:$('#xMod').value.trim(),caracteristicas:$('#xCar').value.trim(),activa:$('#xAct').checked,orden:d.orden??(dragasOrd().length+1),actualizado:new Date().toISOString(),actualizadoPor:S.uid});if(!id){data.creado=data.actualizado;data.creadoPor=S.uid}
+    await saveRecord('draga',nid,'set',data);toast('Draga guardada','ok')}}])}
+
+/* ============ PROYECTOS ============ */
+function renderProys(){const ps=proysOrd();$('#proyList').innerHTML=ps.length?ps.map(p=>{const a=agg(S.ops.filter(o=>o.proyectoId===p.id));const st=p.estado||'Activo';return`<div class="cat"><div class="hd"><div><div class="nm">${esc(p.nombre)}</div><div class="sub">${esc(p.ubicacion||'')}</div></div><span class="badge ${st==='Activo'?'b-ok':st==='Finalizado'?'b-off':'b-warn'}">${esc(st)}</span></div>
+  ${p.descripcion?`<div class="sub">${esc(p.descripcion)}</div>`:''}
+  <dl><dt>Ancho del canal</dt><dd><b>${fmt(p.ancho)} m</b></dd><dt>Profundidad de diseño</dt><dd>${p.profundidadDiseno?fmt(p.profundidadDiseno)+' m':'—'}</dd><dt>Inicio</dt><dd>${p.fechaInicio?fCorta(p.fechaInicio):'—'}</dd><dt>Finalización</dt><dd>${p.fechaFin?fCorta(p.fechaFin):'—'}</dd><dt>Operaciones</dt><dd>${a.n}</dd><dt>Volumen</dt><dd>${fmt(a.vol,0)} m³</dd><dt>Avance lineal</dt><dd>${fmt(a.lin,1)} m</dd></dl>
+  ${p.observaciones?`<div class="sub" style="white-space:pre-wrap">${esc(p.observaciones)}</div>`:''}
+  <div class="acts"><button class="btn sec sm" data-hist="${esc(p.id)}">Ver historial</button><button class="btn sec sm" data-ed="${esc(p.id)}">Editar / configurar ancho</button></div></div>`}).join(''):'<div class="card empty">No hay proyectos registrados.</div>'}
+$('#proyList').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.hist){location.hash='#historial';setTimeout(()=>{$('#hProy').value=b.dataset.hist;renderHist()},0)}else if(b.dataset.ed)proyForm(b.dataset.ed)};
+$('#addProy').onclick=()=>proyForm(null);
+function proyForm(id){const p=id?S.proyectos[id]:{estado:'Activo'};openModal(id?'Editar proyecto':'Agregar proyecto',`<div class="formgrid" style="grid-template-columns:1fr 1fr">
+  <div class="fld" data-f="pnom" style="grid-column:1/-1"><label class="req">Nombre del proyecto</label><input type="text" id="yNom" maxlength="100" value="${esc(p.nombre||'')}"><span class="emsg"></span></div>
+  <div class="fld" style="grid-column:1/-1"><label>Ubicación</label><input type="text" id="yUbi" maxlength="120" value="${esc(p.ubicacion||'')}"></div>
+  <div class="fld" style="grid-column:1/-1"><label>Descripción</label><textarea id="yDes" maxlength="1000" style="min-height:64px">${esc(p.descripcion||'')}</textarea></div>
+  <div class="fld" data-f="pancho"><label class="req">Ancho del canal (m)</label><input type="text" inputmode="decimal" id="yAncho" value="${p.ancho??''}"><span class="hint">Solo afecta registros nuevos</span><span class="emsg"></span></div>
+  <div class="fld" data-f="pprof"><label>Profundidad de diseño (m)</label><input type="text" inputmode="decimal" id="yProf" value="${p.profundidadDiseno??''}" placeholder="Opcional"><span class="emsg"></span></div>
+  <div class="fld"><label>Fecha de inicio</label><input type="date" id="yIni" value="${esc(p.fechaInicio||'')}"></div>
+  <div class="fld" data-f="pfin"><label>Fecha de finalización</label><input type="date" id="yFin" value="${esc(p.fechaFin||'')}"><span class="emsg"></span></div>
+  <div class="fld"><label>Estado</label><select id="yEst">${['Activo','En pausa','Finalizado'].map(s=>`<option ${p.estado===s?'selected':''}>${s}</option>`).join('')}</select></div>
+  <div class="fld" style="grid-column:1/-1"><label>Observaciones</label><textarea id="yObs" maxlength="1500" style="min-height:64px">${esc(p.observaciones||'')}</textarea></div></div>`,
+  [{t:'Cancelar',c:'sec'},{t:'Guardar',c:'pri',fn:async()=>{let ok=true;['pnom','pancho','pprof','pfin'].forEach(f=>setErr(f,''));const nom=$('#yNom').value.trim();const an=parseNum($('#yAncho').value);const prRaw=$('#yProf').value.trim();const pr=prRaw?parseNum(prRaw):null;
+    if(!nom){setErr('pnom','Indique el nombre.');ok=false}else if(Object.entries(S.proyectos).some(([k,v])=>k!==id&&String(v.nombre).toLowerCase()===nom.toLowerCase())){setErr('pnom','Ya existe un proyecto con ese nombre.');ok=false}
+    if(isNaN(an)||an<=0||an>2000){setErr('pancho','Indique un ancho válido mayor que cero.');ok=false}if(prRaw&&(isNaN(pr)||pr<=0)){setErr('pprof','Valor no válido.');ok=false}
+    if($('#yIni').value&&$('#yFin').value&&$('#yFin').value<$('#yIni').value){setErr('pfin','Debe ser posterior al inicio.');ok=false}if(!ok)return false;
+    const nid=id||rid('p_');const data=Object.assign(clone(p),{nombre:nom,ubicacion:$('#yUbi').value.trim(),descripcion:$('#yDes').value.trim(),ancho:r2(an),profundidadDiseno:pr==null?null:r2(pr),fechaInicio:$('#yIni').value,fechaFin:$('#yFin').value,estado:$('#yEst').value,observaciones:$('#yObs').value.trim(),orden:p.orden??(proysOrd().length+1),actualizado:new Date().toISOString(),actualizadoPor:S.uid});if(!id){data.creado=data.actualizado;data.creadoPor=S.uid}
+    await saveRecord('proy',nid,'set',data);toast('Proyecto guardado','ok')}}])}
+
+/* ============ USUARIOS ============ */
+const ROLN={admin:'Administrador',operador:'Operador',consulta:'Consulta'};
+function renderUsers(){const us=Object.entries(S.usuarios);
+  $('#userTable').innerHTML=us.length?`<div class="tw desk"><table><thead><tr><th>Usuario</th><th>Rol</th><th>Creado</th><th class="n">Registros creados</th><th>Estado</th><th></th></tr></thead><tbody>${us.sort((a,b)=>String(a[1].nombre).localeCompare(b[1].nombre)).map(([id,u])=>{const act=u.activo!==false;const n=S.ops.filter(o=>o.creadoPor===id).length;
+    return`<tr><td><b>${esc(u.nombre)}</b>${id===S.uid?' <span class="badge b-info">usted</span>':''}</td><td>${esc(ROLN[u.rol]||'—')}</td><td>${fDT(u.creado)}</td><td class="n">${n}</td><td><span class="badge ${act?'b-ok':'b-bad'}">${act?'Activo':'Desactivado'}</span></td><td style="white-space:nowrap">${id===S.uid?'':`<button class="btn sec sm" data-tgu="${esc(id)}">${act?'Desactivar':'Activar'}</button> ${act?`<button class="btn sec sm" data-rep="${esc(id)}">Reemplazar código</button>`:''}`}</td></tr>`}).join('')}</tbody></table></div>
+    <div class="rcards">${us.map(([id,u])=>{const act=u.activo!==false;return`<div class="rc"><div class="top"><div><b>${esc(u.nombre)}</b><div class="meta">${esc(ROLN[u.rol]||'')} · desde ${fCorta((u.creado||'').slice(0,10))}</div></div><span class="badge ${act?'b-ok':'b-bad'}">${act?'Activo':'Desactivado'}</span></div>${id===S.uid?'':`<div class="acts"><button class="btn sec sm" data-tgu="${esc(id)}">${act?'Desactivar':'Activar'}</button>${act?`<button class="btn sec sm" data-rep="${esc(id)}">Reemplazar código</button>`:''}</div>`}</div>`}).join('')}</div>`:'<div class="empty">Aún no hay usuarios.</div>';
+  $('#ghInfo').innerHTML=`<dl class="dl"><dt>Repositorio</dt><dd><a href="https://github.com/${esc(S.acc.o)}/${esc(S.acc.rp)}" target="_blank" rel="noopener">${esc(S.acc.o)}/${esc(S.acc.rp)}</a></dd><dt>Registros guardados</dt><dd>${S.nRecs}</dd><dt>Pendientes de enviar</dt><dd>${S.pend.length}</dd><dt>Última sincronización</dt><dd>${S.lastSync?fDT(S.lastSync):'—'}</dd><dt>Estado</dt><dd>${S.syncErr?`<span style="color:var(--bad)">${esc(errMsg(S.syncErr))}</span>`:'Conectado'}</dd><dt>Versión de la App</dt><dd>${APP_VER}</dd></dl>`;
+  renderAudit()}
+function renderAudit(){const q=($('#auQ').value||'').toLowerCase();const l=(S.hist||[]).filter(x=>!q||[nombre(x.uid),x.accion,x.detalle].join(' ').toLowerCase().includes(q));
+  $('#auTbl').innerHTML=l.length?`<div class="tw" style="max-height:480px;overflow:auto"><table><thead><tr><th>Fecha y hora</th><th>Usuario</th><th>Acción</th><th>Detalle</th></tr></thead><tbody>${l.slice(0,800).map(x=>`<tr><td style="white-space:nowrap">${fDT(x.t)}${x.pend?' <span class="badge b-warn">pendiente</span>':''}</td><td>${esc(nombre(x.uid))}</td><td><span class="badge ${/Elimin|Desactiv/.test(x.accion)?'b-bad':/Modific/.test(x.accion)?'b-warn':'b-info'}">${esc(x.accion)}</span></td><td style="white-space:pre-wrap">${esc(x.detalle||'')}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Sin eventos.</div>'}
+$('#auQ').addEventListener('input',renderAudit);
+$('#auCsv').onclick=()=>{const ev=S.hist||[];const q=v=>{const s=String(v??'');return /[",\n\r]/.test(s)?`"${s.replace(/"/g,'""')}"`:s};save('historial_modificaciones.csv',new Blob(['\ufeff'+[['Fecha y hora','Usuario','Acción','Detalle'].join(',')].concat(ev.map(x=>[fDT(x.t),nombre(x.uid),x.accion,x.detalle].map(q).join(','))).join('\r\n')],{type:'text/csv'}))};
+$('#userTable').onclick=e=>{const b=e.target.closest('[data-tgu],[data-rep]');if(!b)return;
+  if(b.dataset.rep){const id=b.dataset.rep,u=S.usuarios[id];confirmar('Reemplazar código de acceso',`Se generará un código nuevo para <b>${esc(u.nombre)}</b> y el código anterior dejará de funcionar. Úselo si la persona cambió de teléfono u olvidó su contraseña.`,'Generar código nuevo',async()=>{
+    await saveRecord('usuario',id,'set',Object.assign(clone(u),{activo:false,pub:undefined}));setTimeout(()=>crearUsuario(u.nombre,u.rol),50)});return}
+  const id=b.dataset.tgu,u=S.usuarios[id];const act=u.activo!==false;
+  confirmar(act?'Desactivar usuario':'Activar usuario',act?`¿Desactivar a <b>${esc(u.nombre)}</b>? Su App quedará bloqueada y sus registros nuevos no serán aceptados.`:`¿Activar nuevamente a <b>${esc(u.nombre)}</b>?`,act?'Desactivar':'Activar',async()=>{await saveRecord('usuario',id,'set',Object.assign(clone(u),{activo:!act}));toast(act?'Usuario desactivado':'Usuario activado','ok')})};
+$('#addUser').onclick=()=>{openModal('Agregar usuario',`<div class="formgrid" style="grid-template-columns:1fr">
+  <div class="fld" data-f="unom"><label class="req">Nombre y apellido (usuario)</label><input type="text" id="uNom" maxlength="80"><span class="emsg"></span></div>
+  <div class="fld"><label class="req">Tipo de usuario</label><select id="uRol"><option value="operador">Operador · registra operaciones y consulta</option><option value="admin">Administrador · acceso completo</option><option value="consulta">Consulta · solo lectura (Gerencia)</option></select></div>
+  <p class="note" style="margin:0">Se generará un código de acceso personal. La persona lo pegará en la App y creará su propia contraseña.</p></div>`,
+  [{t:'Cancelar',c:'sec'},{t:'Generar código',c:'pri',fn:async()=>{const n=$('#uNom').value.trim();if(n.length<3){setErr('unom','Escriba el nombre completo.');return false}
+    if(Object.values(S.usuarios).some(u=>u.activo!==false&&String(u.nombre).toLowerCase()===n.toLowerCase())){setErr('unom','Ya existe un usuario activo con ese nombre.');return false}
+    const r=$('#uRol').value;setTimeout(()=>crearUsuario(n,r),50)}}])};
+async function crearUsuario(nombreU,rol){try{const u=rid('u_');let acc;
+  if(rol==='admin'){acc=Object.assign({},S.acc,{u,n:nombreU,r:'admin'});await saveRecord('usuario',u,'set',{nombre:nombreU,rol,activo:true,pub:S.acc.rk})}
+  else{const kp=await genPair();acc={v:1,u,n:nombreU,r:rol,sk:rol==='consulta'?null:kp.priv,kid:rol==='consulta'?null:u,rk:S.acc.rk,dk:S.acc.dk,t:S.acc.t,o:S.acc.o,rp:S.acc.rp};await saveRecord('usuario',u,'set',{nombre:nombreU,rol,activo:true,pub:kp.pub})}
+  showCode(`Código de acceso de ${nombreU}`,codeOf(acc),nombreU,false)}catch(e){toast(errMsg(e),'bad')}}
+function showCode(title,code,quien,propio){const txt=`Control de Operaciones de Dragado – APBB\n1) Abra e instale la App: ${APP_URL}\n2) Pegue este código de acceso y cree su contraseña:\n\n${code}`;
+  openModal(title,`<p class="note" style="margin-top:0">${propio?'<b>Guarde este código en un lugar seguro</b> (por ejemplo, en sus notas privadas). Lo necesita para entrar desde otro teléfono o computadora. Quien lo tenga tiene acceso de administrador.':`Entregue este código <b>de forma privada</b> a ${esc(quien)} (por WhatsApp directo, no en grupos). <b>Por seguridad no se vuelve a mostrar.</b>`}</p>
+  <textarea id="codeTxt" readonly style="min-height:150px;font-family:ui-monospace,Menlo,monospace;font-size:12px;word-break:break-all">${esc(txt)}</textarea>`,
+  [{t:'Compartir',c:'sec',fn:async()=>{if(navigator.share){try{await navigator.share({title:'Código de acceso – Control de Dragado',text:txt})}catch(e){}}else toast('Use “Copiar código”.');return false}},
+   {t:'Copiar código',c:'pri',fn:async()=>{try{await navigator.clipboard.writeText(txt);toast('Código copiado','ok')}catch(e){const t=$('#codeTxt');t.focus();t.select();toast('Seleccione el texto y cópielo')}return false}},{t:'Listo',c:'sec'}])}
+$('#myCode').onclick=()=>confirmar('Mi código de administrador','Se mostrará su código personal de administrador. No lo comparta con nadie.','Mostrar',async()=>{setTimeout(()=>showCode('Su código de administrador',codeOf(S.acc),S.acc.n,true),50)});
+$('#syncNow').onclick=async()=>{const b=$('#syncNow');b.disabled=true;await sync();b.disabled=false;renderUsers();toast(S.syncErr?errMsg(S.syncErr):'Sincronización completa',S.syncErr?'bad':'ok')};
+$('#bkJson').onclick=()=>{const data={sistema:'Control de Operaciones de Dragado – Administración Portuaria Bluff',version:APP_VER,generado:new Date().toISOString(),repositorio:`${S.acc.o}/${S.acc.rp}`,dragas:S.dragas,proyectos:S.proyectos,usuarios:S.usuarios,operaciones:S.ops.map(strip),historial:S.hist};
+  save(`respaldo_dragado_${hoy()}.json`,new Blob([JSON.stringify(data,null,1)],{type:'application/json'}))};
+$('#bkXlsx').onclick=()=>{const l=S.ops.slice().reverse();const R={titulo:'Respaldo completo de operaciones',periodo:'Todo el historial',alcance:'Todas las dragas y proyectos',kpis:kpisArr(agg(l)),detalle:l,generado:new Date().toISOString(),obs:[],tablas:[
+  {titulo:'Dragas',cols:[{h:'Nombre'},{h:'Modelo'},{h:'Características'},{h:'Estado'}],rows:dragasOrd().map(d=>({c:[d.nombre,d.modelo||'',d.caracteristicas||'',d.activa===false?'Inactiva':'Operativa']}))},
+  {titulo:'Proyectos',cols:[{h:'Nombre'},{h:'Ubicación'},{h:'Ancho (m)',d:2},{h:'Profundidad diseño (m)',d:2},{h:'Inicio'},{h:'Fin'},{h:'Estado'}],rows:proysOrd().map(p=>({c:[p.nombre,p.ubicacion||'',p.ancho,p.profundidadDiseno,p.fechaInicio||'',p.fechaFin||'',p.estado||'']}))}]};exportXlsx(R,`respaldo_dragado_${hoy()}`)};
+
+/* ============ Sesión, instalación y arranque ============ */
+let bip=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();bip=e;$$('.instBtn').forEach(b=>b.classList.remove('hidden'))});
+window.addEventListener('appinstalled',()=>{bip=null;$$('.instBtn').forEach(b=>b.classList.add('hidden'));toast('App instalada','ok')});
+async function instalar(){if(!bip)return;bip.prompt();try{await bip.userChoice}catch(e){}bip=null;$$('.instBtn').forEach(b=>b.classList.add('hidden'))}
+function installHint(){if(STANDALONE)return'';if(IOS)return`<div class="ginst"><b>Instalar en iPhone:</b> abra esta página en Safari, toque <b>Compartir</b> <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px"><path d="M12 3v13M7 8l5-5 5 5M5 13v7h14v-7"/></svg> y luego <b>Agregar a pantalla de inicio</b>.</div>`;
+  return`<button type="button" class="btn sec wide instBtn ${bip?'':'hidden'}" onclick="instalar()">Instalar la App en este dispositivo</button>`}
+function gate(html){$('#gBody').innerHTML=html;$('#gate').classList.remove('hidden');document.body.classList.add('locked')}
+function gErr(m){const e=$('#gE');if(e)e.textContent=m||''}
+function busy(btn,on,txt){btn.disabled=on;if(txt)btn.textContent=txt}
+function gateLogin(){const v=JSON.parse(localStorage.getItem('drg_vault'));
+  gate(`<h2>Iniciar sesión</h2><form id="gF" autocomplete="on"><div class="fld"><label>Usuario</label><input type="text" name="username" autocomplete="username" value="${esc(v.n)}" readonly></div>
+  <div class="fld"><label for="gP">Contraseña</label><input type="password" id="gP" autocomplete="current-password" required></div><div class="gerr" id="gE"></div>
+  <button class="btn pri wide" id="gB">Entrar</button></form><div class="glinks"><a href="#" id="gOther">Entrar con otro código de acceso</a></div>${installHint()}`);
+  setTimeout(()=>$('#gP').focus(),50);
+  $('#gF').onsubmit=async e=>{e.preventDefault();const b=$('#gB');busy(b,true,'Verificando…');gErr();try{const acc=await vaultOpen($('#gP').value);await unlock(acc)}catch(x){gErr('Contraseña incorrecta.');busy(b,false,'Entrar')}};
+  $('#gOther').onclick=e=>{e.preventDefault();gateCode(true)}}
+function gateCode(back){gate(`<h2>Primer ingreso</h2><p class="gp">Pegue el código de acceso que le entregó el administrador y cree su contraseña personal.</p>
+  <form id="gF"><div class="fld"><label for="gC">Código de acceso</label><textarea id="gC" rows="4" placeholder="DRGAPBB1.…" spellcheck="false" autocapitalize="off" autocorrect="off"></textarea></div>
+  <div class="fld"><label for="gP1">Cree su contraseña (mínimo 8 caracteres)</label><input type="password" id="gP1" autocomplete="new-password"></div>
+  <div class="fld"><label for="gP2">Repita la contraseña</label><input type="password" id="gP2" autocomplete="new-password"></div><div class="gerr" id="gE"></div>
+  <button class="btn pri wide" id="gB">Entrar</button></form>
+  <div class="glinks">${back?'<a href="#" id="gBack">← Volver a iniciar sesión</a>':''}<a href="#" id="gSetup">Configuración inicial del sistema (solo la primera vez)</a></div>${installHint()}`);
+  $('#gF').onsubmit=async e=>{e.preventDefault();gErr();let acc;try{acc=parseCode($('#gC').value)}catch(x){gErr(x.message);return}const p1=$('#gP1').value,p2=$('#gP2').value;
+    if(p1.length<8){gErr('La contraseña debe tener al menos 8 caracteres.');return}if(p1!==p2){gErr('Las contraseñas no coinciden.');return}
+    const b=$('#gB');busy(b,true,'Preparando…');try{const prev=localStorage.getItem('drg_vault');if(prev){const pv=JSON.parse(prev);if(pv.u!==acc.u||true){await IDB.clear()}}await vaultSave(acc,p1);await unlock(acc,true)}catch(x){gErr(errMsg(x));busy(b,false,'Entrar')}};
+  if(back)$('#gBack').onclick=e=>{e.preventDefault();gateLogin()};$('#gSetup').onclick=e=>{e.preventDefault();gateSetup()}}
+function gateSetup(){gate(`<h2>Configuración inicial</h2><p class="gp">Solo la realiza el administrador una vez. Necesita la llave de GitHub creada para el repositorio (vea la guía de instalación).</p>
+  <form id="gF"><div class="fld"><label for="sN">Su nombre (administrador)</label><input type="text" id="sN" maxlength="80"></div>
+  <div class="frow"><div class="fld"><label for="sO">Cuenta de GitHub</label><input type="text" id="sO" value="${DEF_REPO.o}" autocapitalize="off"></div><div class="fld"><label for="sR">Repositorio</label><input type="text" id="sR" value="${DEF_REPO.rp}" autocapitalize="off"></div></div>
+  <div class="fld"><label for="sT">Llave de GitHub (token con permiso de Issues)</label><input type="password" id="sT" placeholder="github_pat_…" autocapitalize="off" autocomplete="off"><a class="hint" href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Crear llave en GitHub →</a></div>
+  <div class="fld"><label for="gP1">Cree su contraseña (mínimo 8 caracteres)</label><input type="password" id="gP1" autocomplete="new-password"></div>
+  <div class="fld"><label for="gP2">Repita la contraseña</label><input type="password" id="gP2" autocomplete="new-password"></div><div class="gerr" id="gE"></div>
+  <button class="btn pri wide" id="gB">Configurar sistema</button></form><div class="glinks"><a href="#" id="gBack">← Tengo un código de acceso</a></div>`);
+  $('#gBack').onclick=e=>{e.preventDefault();gateCode(!!localStorage.getItem('drg_vault'))};
+  $('#gF').onsubmit=async e=>{e.preventDefault();gErr();const n=$('#sN').value.trim(),o=$('#sO').value.trim(),rp=$('#sR').value.trim(),t=$('#sT').value.trim(),p1=$('#gP1').value,p2=$('#gP2').value;
+    if(n.length<3)return gErr('Escriba su nombre.');if(!o||!rp)return gErr('Indique la cuenta y el repositorio.');if(t.length<20)return gErr('Pegue la llave de GitHub completa.');if(p1.length<8)return gErr('La contraseña debe tener al menos 8 caracteres.');if(p1!==p2)return gErr('Las contraseñas no coinciden.');
+    const b=$('#gB');busy(b,true,'Verificando GitHub…');
+    try{const tmp={o,rp,t};const repo=await ghReq(tmp,'');if(repo&&repo.has_issues===false){const x=new Error();x.status=410;throw x}
+      const l=await ghReq(tmp,'/issues?state=all&per_page=100');if(l.some(it=>/^DRG/.test(it.title||''))){gErr('Este repositorio ya tiene datos del sistema. Entre con su código de administrador.');busy(b,false,'Configurar sistema');return}
+      busy(b,true,'Creando llaves de seguridad…');const root=await genPair();const dk=b64u(crypto.getRandomValues(new Uint8Array(32)));const u=rid('u_');
+      const acc={v:1,u,n,r:'admin',sk:root.priv,kid:'root',rk:root.pub,dk,t,o,rp};await IDB.clear();await vaultSave(acc,p1);await unlock(acc,true,true);
+      await saveRecord('usuario',u,'set',{nombre:n,rol:'admin',activo:true,pub:root.pub});
+      await saveRecord('draga','rama','set',{nombre:'Rama',modelo:'Damen CSD 350',caracteristicas:'Draga de succión con cortador (Cutter Suction Dredger).',activa:true,orden:1});
+      await saveRecord('draga','rama-kay','set',{nombre:'Rama Kay',modelo:'Damen CSD 350',caracteristicas:'Draga de succión con cortador (Cutter Suction Dredger).',activa:true,orden:2});
+      await saveRecord('proy','bluff-pescanica','set',{nombre:'Canal de navegación Bluff-Pescanica',ubicacion:'Bluff – Bluefields, Nicaragua',descripcion:'Dragado del canal de navegación Bluff-Pescanica.',ancho:30,profundidadDiseno:null,fechaInicio:'',fechaFin:'',estado:'Activo',observaciones:'',orden:1});
+      await sync();showCode('Su código de administrador',codeOf(acc),n,true)}
+    catch(x){gErr(errMsg(x));busy(b,false,'Configurar sistema')}}}
+function ini(n){return String(n||'?').split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join('')}
+let syncTimer=null;
+async function unlock(acc,fresh,setup){S.acc=acc;S.uid=acc.u;S.isAdmin=acc.r==='admin';S.canWrite=!!acc.sk&&acc.r!=='consulta';S.rol=acc.r;S.me={name:acc.n};
+  await loadLocal();await rebuild();
+  $('#gate').classList.add('hidden');document.body.classList.remove('locked');
+  $('#uName').textContent=acc.n;$('#uAvatar').src='data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="52" height="52"><rect width="52" height="52" rx="26" fill="#0f7c8c"/><text x="26" y="33" font-family="Arial" font-size="20" font-weight="700" fill="#fff" text-anchor="middle">${ini(acc.n)}</text></svg>`);
+  $('#uRole').textContent=ROLN[acc.r];$('#userChip').classList.remove('hidden');
+  applyRoleUI();resetForm();route();setSync();
+  if(!setup){const p=sync();if(fresh){toast('Descargando datos desde GitHub…');await p;toast(S.syncErr?errMsg(S.syncErr):'Datos sincronizados',S.syncErr?'bad':'ok')}}
+  clearInterval(syncTimer);syncTimer=setInterval(()=>{if(!document.hidden)sync()},60000)}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S.acc)sync()});
+window.addEventListener('online',()=>{if(S.acc)sync()});
+$('#lockBtn').onclick=e=>{e.preventDefault();location.reload()};
+$('#pwBtn').onclick=e=>{e.preventDefault();closeSide();openModal('Cambiar contraseña',`<div class="formgrid" style="grid-template-columns:1fr"><div class="fld" data-f="pa"><label>Contraseña actual</label><input type="password" id="pA" autocomplete="current-password"><span class="emsg"></span></div><div class="fld" data-f="pn"><label>Nueva contraseña (mínimo 8)</label><input type="password" id="pN" autocomplete="new-password"><span class="emsg"></span></div><div class="fld" data-f="pr"><label>Repita la nueva</label><input type="password" id="pR" autocomplete="new-password"><span class="emsg"></span></div></div>`,
+  [{t:'Cancelar',c:'sec'},{t:'Guardar',c:'pri',fn:async()=>{['pa','pn','pr'].forEach(f=>setErr(f,''));try{await vaultOpen($('#pA').value)}catch(x){setErr('pa','Contraseña incorrecta.');return false}
+    if($('#pN').value.length<8){setErr('pn','Mínimo 8 caracteres.');return false}if($('#pN').value!==$('#pR').value){setErr('pr','No coinciden.');return false}await vaultSave(S.acc,$('#pN').value);toast('Contraseña actualizada','ok')}}])};
+$('#wipeBtn').onclick=e=>{e.preventDefault();closeSide();confirmar('Quitar mi acceso de este dispositivo','Se borrarán de este dispositivo su acceso y la copia local de los datos (los datos siguen guardados en GitHub). Para volver a entrar necesitará un código de acceso.','Quitar acceso',async()=>{localStorage.removeItem('drg_vault');await IDB.clear();location.reload()})};
+function registerSW(){try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+  if(!('serviceWorker' in navigator)||!(location.protocol==='https:'||location.hostname==='localhost'))return;
+  navigator.serviceWorker.register('sw.js').then(reg=>{const show=()=>$('#updBanner').classList.remove('hidden');if(reg.waiting&&navigator.serviceWorker.controller)show();
+    reg.addEventListener('updatefound',()=>{const w=reg.installing;if(w)w.addEventListener('statechange',()=>{if(w.state==='installed'&&navigator.serviceWorker.controller)show()})});
+    $('#updBtn').onclick=()=>{S.updating=true;if(reg.waiting)reg.waiting.postMessage('skip');else location.reload()};
+    setInterval(()=>{if(navigator.onLine)reg.update().catch(()=>{})},3600000)}).catch(()=>{});
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(S.updating)location.reload()})}
+function init(){registerSW();$('#sideInst').innerHTML=installHint();$('#verTxt').textContent='Versión '+APP_VER;
+  if(!window.crypto||!crypto.subtle){fatal('Este navegador no es compatible. Abra la App desde la dirección segura (https).');return}
+  if(localStorage.getItem('drg_vault'))gateLogin();else gateCode(false)}
+init();
+</script>
+</body>
+</html>
