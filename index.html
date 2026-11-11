@@ -221,6 +221,13 @@ body.locked{overflow:hidden}
 input[type=date],input[type=month]{-webkit-appearance:none;appearance:none;display:block;max-width:100%;min-width:0;text-align:left;line-height:40px}
 input[type=date]::-webkit-date-and-time-value,input[type=month]::-webkit-date-and-time-value{text-align:left;margin:0}
 .filters .fld{min-width:0}
+.devbox{background:var(--teal-soft);border-radius:12px;padding:12px;text-align:center;margin:4px 0 14px}
+.devbox>.sm{font-size:.78rem;color:var(--ink-2);font-weight:600}
+.devbox .btn.acc{color:#fff;font-weight:600}.devbox .btn{font-size:.84rem}
+.devid{font-family:ui-monospace,Menlo,monospace;font-size:1.7rem;font-weight:700;letter-spacing:.12em;color:var(--navy);margin:2px 0 8px}
+.gadm{margin-top:16px;font-size:.88rem}.gadm summary{color:var(--ink-2);cursor:pointer}.gadm a{color:var(--teal)}
+.pasos{display:flex;flex-direction:column;gap:8px}.pasos>div{display:flex;gap:10px;align-items:center;font-size:.9rem}
+.pasos i{font-style:normal;width:24px;height:24px;border-radius:50%;background:var(--navy);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex:none}
 /* Responsive */
 @media (max-width:1100px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.formgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:1023px){
@@ -276,7 +283,7 @@ input[type=date]::-webkit-date-and-time-value,input[type=month]::-webkit-date-an
     <a href="#dragas" data-v="dragas" data-need="admin"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17h18l-2 3H5zM6 17V9h6l3 4h4v4"/></svg>Catálogo de dragas</a>
     <a href="#proyectos" data-v="proyectos" data-need="admin"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg>Catálogo de proyectos</a>
     <a href="#usuarios" data-v="usuarios" data-need="admin"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5M16 4.5a3.5 3.5 0 010 7M18 14.8c1.8.7 3 2.4 3.5 5.2"/></svg>Administración de usuarios</a>
-    <div class="foot"><span id="syncState">Sin sincronizar</span><div id="sideInst"></div><div style="margin-top:10px"><a href="#" id="pwBtn">Cambiar contraseña</a><a href="#" id="lockBtn">Cerrar sesión</a><a href="#" id="wipeBtn" style="color:var(--ink-3)">Quitar acceso de este dispositivo</a></div><div id="verTxt" style="margin-top:8px"></div></div>
+    <div class="foot"><span id="syncState">Sin sincronizar</span><div id="sideInst"></div><div style="margin-top:10px"><a href="#" id="wipeBtn" style="color:var(--ink-3)">Quitar acceso de este dispositivo</a></div><div id="verTxt" style="margin-top:8px"></div></div>
   </nav>
   <div class="scrim" id="scrim"></div>
   <main id="main">
@@ -409,9 +416,9 @@ input[type=date]::-webkit-date-and-time-value,input[type=month]::-webkit-date-an
 
     <!-- USUARIOS -->
     <section class="view hidden" id="v-usuarios">
-      <div class="pagehead"><div><h1>Administración de usuarios</h1><p class="sub">Accesos, permisos, historial de modificaciones, GitHub y respaldos.</p></div><button class="btn pri" id="addUser">+ Agregar usuario</button></div>
+      <div class="pagehead"><div><h1>Administración de usuarios</h1><p class="sub">Accesos, permisos, historial de modificaciones, GitHub y respaldos.</p></div><button class="btn pri" id="addUser">+ Invitar a un colega</button></div>
       <div class="card"><div class="ch"><h2>Usuarios</h2></div>
-        <div class="info" style="margin-bottom:12px">Cada usuario recibe un <b>código de acceso personal</b> y crea su propia contraseña en su teléfono o computadora; las contraseñas nunca salen del dispositivo. <b>Operador</b>: registra operaciones y consulta. <b>Consulta</b>: solo lectura. <b>Administrador</b>: acceso completo. Cada registro va firmado digitalmente, por lo que los permisos se verifican en todos los dispositivos.</div>
+        <div class="info" style="margin-bottom:12px">Cada colega recibe un <b>código de acceso ligado al ID de su teléfono</b>: lo activa una vez y desde entonces la App abre directamente. El código no funciona en otro teléfono. <b>Operador</b>: registra operaciones y consulta. <b>Consulta</b>: solo lectura. <b>Administrador</b>: acceso completo. Cada registro va firmado digitalmente, por lo que los permisos se verifican en todos los dispositivos.</div>
         <div id="userTable"></div></div>
       <div class="card"><div class="ch"><h2>Historial de modificaciones</h2><button class="btn sec sm" id="auCsv">Exportar CSV</button></div>
         <div class="filters" style="margin-bottom:10px"><div class="fld" style="flex:1"><input type="text" id="auQ" placeholder="Filtrar por usuario, acción o detalle…"></div></div><div id="auTbl"></div></div>
@@ -476,7 +483,7 @@ $('#mX').onclick=closeModal;$('#modal').addEventListener('click',e=>{if(e.target
 function confirmar(title,msg,okText,fn){openModal(title,`<p style="margin:0">${msg}</p>`,[{t:'Cancelar',c:'sec'},{t:okText,c:'dan',fn}])}
 
 /* ============ Datos: GitHub cifrado + firmas digitales ============ */
-const APP_VER='2026.11.10-3';
+const APP_VER='2026.11.11-1';
 const DEF_REPO={o:'jesiahm2324-gif',rp:'control-dragado-apbb'};
 const APP_URL=(location.protocol==='https:'?location.origin+location.pathname.replace(/index\.html$/,''):`https://${DEF_REPO.o}.github.io/${DEF_REPO.rp}/`);
 const IOS=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
@@ -919,8 +926,8 @@ function proyForm(id){const p=id?S.proyectos[id]:{estado:'Activo'};openModal(id?
 const ROLN={admin:'Administrador',operador:'Operador',consulta:'Consulta'};
 function renderUsers(){const us=Object.entries(S.usuarios);
   $('#userTable').innerHTML=us.length?`<div class="tw desk"><table><thead><tr><th>Usuario</th><th>Rol</th><th>Creado</th><th class="n">Registros creados</th><th>Estado</th><th></th></tr></thead><tbody>${us.sort((a,b)=>String(a[1].nombre).localeCompare(b[1].nombre)).map(([id,u])=>{const act=u.activo!==false;const n=S.ops.filter(o=>o.creadoPor===id).length;
-    return`<tr><td><b>${esc(u.nombre)}</b>${id===S.uid?' <span class="badge b-info">usted</span>':''}</td><td>${esc(ROLN[u.rol]||'—')}</td><td>${fDT(u.creado)}</td><td class="n">${n}</td><td><span class="badge ${act?'b-ok':'b-bad'}">${act?'Activo':'Desactivado'}</span></td><td style="white-space:nowrap">${id===S.uid?'':`<button class="btn sec sm" data-tgu="${esc(id)}">${act?'Desactivar':'Activar'}</button> ${act?`<button class="btn sec sm" data-rep="${esc(id)}">Reemplazar código</button>`:''}`}</td></tr>`}).join('')}</tbody></table></div>
-    <div class="rcards">${us.map(([id,u])=>{const act=u.activo!==false;return`<div class="rc"><div class="top"><div><b>${esc(u.nombre)}</b><div class="meta">${esc(ROLN[u.rol]||'')} · desde ${fCorta((u.creado||'').slice(0,10))}</div></div><span class="badge ${act?'b-ok':'b-bad'}">${act?'Activo':'Desactivado'}</span></div>${id===S.uid?'':`<div class="acts"><button class="btn sec sm" data-tgu="${esc(id)}">${act?'Desactivar':'Activar'}</button>${act?`<button class="btn sec sm" data-rep="${esc(id)}">Reemplazar código</button>`:''}</div>`}</div>`}).join('')}</div>`:'<div class="empty">Aún no hay usuarios.</div>';
+    return`<tr><td><b>${esc(u.nombre)}</b>${id===S.uid?' <span class="badge b-info">usted</span>':''}</td><td>${esc(ROLN[u.rol]||'—')}${u.dev?`<div class="note">ID ${devFmt(u.dev)}</div>`:''}</td><td>${fDT(u.creado)}</td><td class="n">${n}</td><td><span class="badge ${act?'b-ok':'b-bad'}">${act?'Activo':'Desactivado'}</span></td><td style="white-space:nowrap">${id===S.uid?'':`<button class="btn sec sm" data-tgu="${esc(id)}">${act?'Desactivar':'Activar'}</button> ${act?`<button class="btn sec sm" data-rep="${esc(id)}">Nuevo código (otro teléfono)</button>`:''}`}</td></tr>`}).join('')}</tbody></table></div>
+    <div class="rcards">${us.map(([id,u])=>{const act=u.activo!==false;return`<div class="rc"><div class="top"><div><b>${esc(u.nombre)}</b><div class="meta">${esc(ROLN[u.rol]||'')} · desde ${fCorta((u.creado||'').slice(0,10))}</div></div><span class="badge ${act?'b-ok':'b-bad'}">${act?'Activo':'Desactivado'}</span></div>${id===S.uid?'':`<div class="acts"><button class="btn sec sm" data-tgu="${esc(id)}">${act?'Desactivar':'Activar'}</button>${act?`<button class="btn sec sm" data-rep="${esc(id)}">Nuevo código (otro teléfono)</button>`:''}</div>`}</div>`}).join('')}</div>`:'<div class="empty">Aún no hay usuarios.</div>';
   $('#ghInfo').innerHTML=`<dl class="dl"><dt>Repositorio</dt><dd><a href="https://github.com/${esc(S.acc.o)}/${esc(S.acc.rp)}" target="_blank" rel="noopener">${esc(S.acc.o)}/${esc(S.acc.rp)}</a></dd><dt>Registros guardados</dt><dd>${S.nRecs}</dd><dt>Pendientes de enviar</dt><dd>${S.pend.length}</dd><dt>Última sincronización</dt><dd>${S.lastSync?fDT(S.lastSync):'—'}</dd><dt>Estado</dt><dd>${S.syncErr?`<span style="color:var(--bad)">${esc(errMsg(S.syncErr))}</span>`:'Conectado'}</dd><dt>Llave de operadores</dt><dd>${S.cfg.tOp?'Configurada':'<span style="color:var(--warn)">No configurada</span>'} · <a href="#" id="setTop">${S.cfg.tOp?'Cambiar':'Configurar'}</a></dd><dt>Versión de la App</dt><dd>${APP_VER}</dd></dl>`;
   $('#setTop').onclick=e=>{e.preventDefault();openModal('Llave de GitHub para operadores',`<div class="fld" data-f="ctop"><label>Llave fine-grained (solo Issues de ${esc(S.acc.rp)})</label><input type="password" id="cTop" placeholder="github_pat_…" autocapitalize="off" autocomplete="off"><span class="emsg"></span></div><p class="note">Los códigos que se generen a partir de ahora usarán esta llave. Los códigos ya entregados siguen con la llave anterior hasta que se reemplacen.</p>`,[{t:'Cancelar',c:'sec'},{t:'Guardar',c:'pri',fn:async()=>{const ok=await guardarLlaveOp($('#cTop').value.trim(),'ctop');if(!ok)return false;renderUsers()}}])};
   renderAudit()}
@@ -928,32 +935,59 @@ function renderAudit(){const q=($('#auQ').value||'').toLowerCase();const l=(S.hi
   $('#auTbl').innerHTML=l.length?`<div class="tw" style="max-height:480px;overflow:auto"><table><thead><tr><th>Fecha y hora</th><th>Usuario</th><th>Acción</th><th>Detalle</th></tr></thead><tbody>${l.slice(0,800).map(x=>`<tr><td style="white-space:nowrap">${fDT(x.t)}${x.pend?' <span class="badge b-warn">pendiente</span>':''}</td><td>${esc(nombre(x.uid))}</td><td><span class="badge ${/Elimin|Desactiv/.test(x.accion)?'b-bad':/Modific/.test(x.accion)?'b-warn':'b-info'}">${esc(x.accion)}</span></td><td style="white-space:pre-wrap">${esc(x.detalle||'')}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Sin eventos.</div>'}
 $('#auQ').addEventListener('input',renderAudit);
 $('#auCsv').onclick=()=>{const ev=S.hist||[];const q=v=>{const s=String(v??'');return /[",\n\r]/.test(s)?`"${s.replace(/"/g,'""')}"`:s};save('historial_modificaciones.csv',new Blob(['\ufeff'+[['Fecha y hora','Usuario','Acción','Detalle'].join(',')].concat(ev.map(x=>[fDT(x.t),nombre(x.uid),x.accion,x.detalle].map(q).join(','))).join('\r\n')],{type:'text/csv'}))};
+/* ===== Acceso por ID de teléfono (como la App Servicios Portuarios APBB) ===== */
+function devId(){let d=null;try{d=localStorage.getItem('drg_dev')}catch(e){}if(!d||!/^[A-Z0-9]{8}$/.test(d)){const A='ABCDEFGHJKMNPQRSTUVWXYZ23456789',x=crypto.getRandomValues(new Uint8Array(8));d=[...x].map(v=>A[v%A.length]).join('');try{localStorage.setItem('drg_dev',d)}catch(e){}}return d}
+const devFmt=d=>d?d.slice(0,4)+'-'+d.slice(4):'';
+function normDev(s){const u=String(s||'').toUpperCase();let m=u.match(/(?:^|[^A-Z0-9])([A-Z0-9]{4})-([A-Z0-9]{4})(?![A-Z0-9])/);if(m)return m[1]+m[2];const c=u.replace(/[^A-Z0-9]/g,'');return c.length===8?c:''}
+const accLoad=()=>{try{return JSON.parse(localStorage.getItem('drg_acc')||'null')}catch(e){return null}};
+const accSave=a=>localStorage.setItem('drg_acc',JSON.stringify(a));
+function copiar(t,ok){const fb=()=>{const ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.focus();ta.select();let k=false;try{k=document.execCommand('copy')}catch(e){}ta.remove();toast(k?ok:'Mantenga presionado el texto para copiarlo',k?'ok':'')};
+  try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(()=>toast(ok,'ok'),fb);return}}catch(e){}fb()}
+function abrirWA(txt){const u='whatsapp://send?text='+encodeURIComponent(txt);let salio=false;const onHide=()=>{if(document.hidden)salio=true};document.addEventListener('visibilitychange',onHide);
+  const a=document.createElement('a');a.href=u;a.style.display='none';document.body.appendChild(a);a.click();a.remove();
+  setTimeout(async()=>{document.removeEventListener('visibilitychange',onHide);if(salio||document.hidden)return;try{if(navigator.share){await navigator.share({text:txt});return}}catch(e){if(e&&e.name==='AbortError')return}copiar(txt,'No se pudo abrir WhatsApp. Se copió el mensaje: péguelo en el chat.')},1600)}
+async function pegarEn(id){const el=document.getElementById(id);try{const t=await navigator.clipboard.readText();if(t){el.value=t.trim();el.dispatchEvent(new Event('input',{bubbles:true}));toast('Pegado');return}}catch(e){}el.focus();toast('Mantenga presionado el campo y elija Pegar')}
+const textoInv=n=>`Hola${n?' '+n:''}, te comparto la app *Control de Operaciones de Dragado* de la Administración Portuaria Bluff.\n\n1. Abrí este enlace en Safari (iPhone) o Chrome (Android): ${APP_URL}\n2. Instalala: en iPhone tocá Compartir → "Agregar a pantalla de inicio". En Android tocá ⋮ → "Instalar app".\n3. Abrí la app *desde el ícono* y tocá "Enviar mi ID por WhatsApp".\n\nCon ese ID te envío tu código de acceso.`;
+
 $('#userTable').onclick=e=>{const b=e.target.closest('[data-tgu],[data-rep]');if(!b)return;
-  if(b.dataset.rep){const id=b.dataset.rep,u=S.usuarios[id];confirmar('Reemplazar código de acceso',`Se generará un código nuevo para <b>${esc(u.nombre)}</b> y el código anterior dejará de funcionar. Úselo si la persona cambió de teléfono u olvidó su contraseña.`,'Generar código nuevo',async()=>{
-    await saveRecord('usuario',id,'set',Object.assign(clone(u),{activo:false,pub:undefined}));setTimeout(()=>crearUsuario(u.nombre,u.rol),50)});return}
+  if(b.dataset.rep){const id=b.dataset.rep,u=S.usuarios[id];invitarModal({nombre:u.nombre,rol:u.rol,reemplaza:id});return}
   const id=b.dataset.tgu,u=S.usuarios[id];const act=u.activo!==false;
   confirmar(act?'Desactivar usuario':'Activar usuario',act?`¿Desactivar a <b>${esc(u.nombre)}</b>? Su App quedará bloqueada y sus registros nuevos no serán aceptados.`:`¿Activar nuevamente a <b>${esc(u.nombre)}</b>?`,act?'Desactivar':'Activar',async()=>{await saveRecord('usuario',id,'set',Object.assign(clone(u),{activo:!act}));toast(act?'Usuario desactivado':'Usuario activado','ok')})};
-$('#addUser').onclick=()=>{openModal('Agregar usuario',`<div class="formgrid" style="grid-template-columns:1fr">
-  <div class="fld" data-f="unom"><label class="req">Nombre y apellido (usuario)</label><input type="text" id="uNom" maxlength="80"><span class="emsg"></span></div>
-  <div class="fld"><label class="req">Tipo de usuario</label><select id="uRol"><option value="operador">Operador · registra operaciones y consulta</option><option value="admin">Administrador · acceso completo</option><option value="consulta">Consulta · solo lectura (Gerencia)</option></select></div>
-  <div class="fld hidden" data-f="utop" id="uTopW"><label class="req">Llave de GitHub para operadores</label><input type="password" id="uTop" placeholder="github_pat_…" autocapitalize="off" autocomplete="off"><span class="hint">Llave <b>fine-grained</b> solo para el repositorio de la App, con permiso de Issues (lectura y escritura). Se configura una sola vez y la usan todos los operadores y usuarios de consulta. Su llave de administrador nunca se entrega a ellos.</span><span class="emsg"></span></div>
-  <p class="note" style="margin:0">Se generará un código de acceso personal. La persona lo pegará en la App y creará su propia contraseña.</p></div>`,
-  [{t:'Cancelar',c:'sec'},{t:'Generar código',c:'pri',fn:async()=>{const n=$('#uNom').value.trim();if(n.length<3){setErr('unom','Escriba el nombre completo.');return false}
-    if(Object.values(S.usuarios).some(u=>u.activo!==false&&String(u.nombre).toLowerCase()===n.toLowerCase())){setErr('unom','Ya existe un usuario activo con ese nombre.');return false}
-    const r=$('#uRol').value;if(r!=='admin'&&!S.cfg.tOp){const ok=await guardarLlaveOp($('#uTop').value.trim(),'utop');if(!ok)return false}setTimeout(()=>crearUsuario(n,r),50)}}]);
-  const syncTop=()=>$('#uTopW').classList.toggle('hidden',$('#uRol').value==='admin'||!!S.cfg.tOp);$('#uRol').addEventListener('change',syncTop);syncTop()};
+$('#addUser').onclick=()=>invitarModal({});
+function invitarModal(pre){const rep=!!pre.reemplaza;
+  openModal(rep?'Nuevo código para '+pre.nombre:'Invitar a un colega',`
+  <div class="pasos"><div><i>1</i><span>Invite al colega por WhatsApp</span></div><div><i>2</i><span>Él le responde con el ID de su teléfono</span></div><div><i>3</i><span>Usted genera y le envía el código</span></div></div>
+  <button type="button" class="btn acc wide" id="invWA" style="margin:10px 0 16px">Invitar por WhatsApp</button>
+  <div class="formgrid" style="grid-template-columns:1fr">
+  <div class="fld" data-f="unom"><label class="req">Nombre y apellido</label><input type="text" id="uNom" maxlength="80" value="${esc(pre.nombre||'')}" ${rep?'readonly':''}><span class="emsg"></span></div>
+  <div class="fld" data-f="udev"><label class="req">ID del teléfono del colega</label><div style="display:flex;gap:8px"><input type="text" id="uDev" placeholder="XXXX-XXXX" autocapitalize="characters" autocomplete="off" style="flex:1;text-transform:uppercase;letter-spacing:.08em"><button type="button" class="btn sec" id="uDevP">Pegar</button></div><span class="hint">Puede pegar el mensaje completo de WhatsApp: el ID se detecta solo.</span><span class="emsg"></span></div>
+  <div class="fld"><label class="req">Tipo de usuario</label><select id="uRol" ${rep?'disabled':''}><option value="operador">Operador · registra operaciones y consulta</option><option value="admin">Administrador · acceso completo</option><option value="consulta">Consulta · solo lectura (Gerencia)</option></select></div>
+  <div class="fld hidden" data-f="utop" id="uTopW"><label class="req">Llave de GitHub para operadores</label><input type="password" id="uTop" placeholder="github_pat_…" autocapitalize="off" autocomplete="off"><span class="hint">Llave <b>fine-grained</b> solo para el repositorio de la App, con permiso de Issues (lectura y escritura). Se configura una sola vez. Su llave de administrador nunca se entrega a los operadores.</span><span class="emsg"></span></div>
+  <p class="note" style="margin:0">El código solo funciona en el teléfono con ese ID. Una vez activado, la App abre directamente, sin contraseña.</p></div>`,
+  [{t:'Cancelar',c:'sec'},{t:'Generar código',c:'pri',fn:async()=>{['unom','udev'].forEach(f=>setErr(f,''));const n=$('#uNom').value.trim();if(n.length<3){setErr('unom','Escriba el nombre completo.');return false}
+    if(!rep&&Object.values(S.usuarios).some(u=>u.activo!==false&&String(u.nombre).toLowerCase()===n.toLowerCase())){setErr('unom','Ya existe un usuario activo con ese nombre.');return false}
+    const d=normDev($('#uDev').value);if(!d){setErr('udev','Escriba o pegue el ID que le envió el colega (8 letras y números).');return false}
+    const r=$('#uRol').value;if(r!=='admin'&&!S.cfg.tOp){const ok=await guardarLlaveOp($('#uTop').value.trim(),'utop');if(!ok)return false}
+    if(rep){const u=S.usuarios[pre.reemplaza];await saveRecord('usuario',pre.reemplaza,'set',Object.assign(clone(u),{activo:false}))}
+    setTimeout(()=>crearUsuario(n,r,d),50)}}]);
+  if(pre.rol)$('#uRol').value=pre.rol;
+  const syncTop=()=>$('#uTopW').classList.toggle('hidden',$('#uRol').value==='admin'||!!S.cfg.tOp);$('#uRol').addEventListener('change',syncTop);syncTop();
+  $('#invWA').onclick=()=>abrirWA(textoInv(($('#uNom').value.trim().split(/\s+/)[0])||''));
+  $('#uDevP').onclick=()=>pegarEn('uDev');
+  $('#uDev').addEventListener('input',e=>{const v=e.target.value;if(v.length>9){const d=normDev(v);if(d){e.target.value=devFmt(d);toast('ID detectado: '+devFmt(d))}}})}
 async function guardarLlaveOp(t,f){setErr(f,'');if(t.length<20){setErr(f,'Pegue la llave completa.');return false}if(t===S.acc.t){setErr(f,'Debe ser una llave distinta a la suya de administrador.');return false}
   try{await ghReq({o:S.acc.o,rp:S.acc.rp,t},'/issues?per_page=1')}catch(e){setErr(f,e.status===401?'La llave no es válida.':e.status===404||e.status===403?'La llave no tiene acceso a los Issues de '+S.acc.rp+'.':errMsg(e));return false}
   await saveRecord('cfg','tokens','set',{tOp:t,actualizado:new Date().toISOString()});toast('Llave de operadores guardada','ok');return true}
-async function crearUsuario(nombreU,rol){try{const u=rid('u_');let acc;
-  if(rol==='admin'){acc=Object.assign({},S.acc,{u,n:nombreU,r:'admin'});await saveRecord('usuario',u,'set',{nombre:nombreU,rol,activo:true,pub:S.acc.rk})}
-  else{const kp=await genPair();if(!S.cfg.tOp)throw new Error('Primero configure la llave de GitHub para operadores.');acc={v:1,u,n:nombreU,r:rol,sk:rol==='consulta'?null:kp.priv,kid:rol==='consulta'?null:u,rk:S.acc.rk,dk:S.acc.dk,t:S.cfg.tOp,o:S.acc.o,rp:S.acc.rp};await saveRecord('usuario',u,'set',{nombre:nombreU,rol,activo:true,pub:kp.pub})}
+async function crearUsuario(nombreU,rol,dev){try{const u=rid('u_');let acc;
+  if(rol==='admin'){acc=Object.assign({},S.acc,{u,n:nombreU,r:'admin',d:dev});await saveRecord('usuario',u,'set',{nombre:nombreU,rol,activo:true,pub:S.acc.rk,dev})}
+  else{const kp=await genPair();if(!S.cfg.tOp)throw new Error('Primero configure la llave de GitHub para operadores.');acc={v:1,u,n:nombreU,r:rol,d:dev,sk:rol==='consulta'?null:kp.priv,kid:rol==='consulta'?null:u,rk:S.acc.rk,dk:S.acc.dk,t:S.cfg.tOp,o:S.acc.o,rp:S.acc.rp};await saveRecord('usuario',u,'set',{nombre:nombreU,rol,activo:true,pub:kp.pub,dev})}
   showCode(`Código de acceso de ${nombreU}`,codeOf(acc),nombreU,false)}catch(e){toast(errMsg(e),'bad')}}
-function showCode(title,code,quien,propio){const txt=`Control de Operaciones de Dragado – APBB\n1) Abra e instale la App: ${APP_URL}\n2) Pegue este código de acceso y cree su contraseña:\n\n${code}`;
-  openModal(title,`<p class="note" style="margin-top:0">${propio?'<b>Guarde este código en un lugar seguro</b> (por ejemplo, en sus notas privadas). Lo necesita para entrar desde otro teléfono o computadora. Quien lo tenga tiene acceso de administrador.':`Entregue este código <b>de forma privada</b> a ${esc(quien)} (por WhatsApp directo, no en grupos). <b>Por seguridad no se vuelve a mostrar.</b>`}</p>
-  <textarea id="codeTxt" readonly style="min-height:150px;font-family:ui-monospace,Menlo,monospace;font-size:12px;word-break:break-all">${esc(txt)}</textarea>`,
-  [{t:'Compartir',c:'sec',fn:async()=>{if(navigator.share){try{await navigator.share({title:'Código de acceso – Control de Dragado',text:txt})}catch(e){}}else toast('Use “Copiar código”.');return false}},
-   {t:'Copiar código',c:'pri',fn:async()=>{try{await navigator.clipboard.writeText(txt);toast('Código copiado','ok')}catch(e){const t=$('#codeTxt');t.focus();t.select();toast('Seleccione el texto y cópielo')}return false}},{t:'Listo',c:'sec'}])}
+function showCode(title,code,quien,propio){const pn=String(quien||'').split(/\s+/)[0];
+  const txt=propio?code:`Hola ${pn}, este es tu código de acceso a la app *Control de Operaciones de Dragado – APBB*.\nAbrí la app desde el ícono, tocá "Pegar" y luego "Activar":\n\n${code}`;
+  openModal(title,`<p class="note" style="margin-top:0">${propio?'<b>Guarde este código en un lugar seguro</b> (por ejemplo, en una nota con bloqueo). Lo necesita para entrar como administrador desde otro teléfono o computadora. Quien lo tenga tiene acceso de administrador.':`Envíelo a <b>${esc(quien)}</b> por WhatsApp directo (no en grupos). Solo funciona en su teléfono.`}</p>
+  <textarea id="codeTxt" readonly style="min-height:130px;font-family:ui-monospace,Menlo,monospace;font-size:12px;word-break:break-all">${esc(txt)}</textarea>`,
+  propio?[{t:'Copiar código',c:'pri',fn:()=>{copiar(txt,'Código copiado');return false}},{t:'Listo',c:'sec'}]
+   :[{t:'Copiar',c:'sec',fn:()=>{copiar(txt,'Mensaje copiado');return false}},{t:'Enviar por WhatsApp',c:'pri',fn:()=>{abrirWA(txt);return false}},{t:'Listo',c:'sec'}])}
 $('#myCode').onclick=()=>confirmar('Mi código de administrador','Se mostrará su código personal de administrador. No lo comparta con nadie.','Mostrar',async()=>{setTimeout(()=>showCode('Su código de administrador',codeOf(S.acc),S.acc.n,true),50)});
 $('#syncNow').onclick=async()=>{const b=$('#syncNow');b.disabled=true;await sync();b.disabled=false;renderUsers();toast(S.syncErr?errMsg(S.syncErr):'Sincronización completa',S.syncErr?'bad':'ok')};
 $('#bkJson').onclick=()=>{const data={sistema:'Control de Operaciones de Dragado – Administración Portuaria Bluff',version:APP_VER,generado:new Date().toISOString(),repositorio:`${S.acc.o}/${S.acc.rp}`,dragas:S.dragas,proyectos:S.proyectos,usuarios:S.usuarios,operaciones:S.ops.map(strip),historial:S.hist};
@@ -972,38 +1006,45 @@ function installHint(){if(STANDALONE)return'';if(IOS)return`<div class="ginst"><
 function gate(html){$('#gBody').innerHTML=html;$('#gate').classList.remove('hidden');document.body.classList.add('locked')}
 function gErr(m){const e=$('#gE');if(e)e.textContent=m||''}
 function busy(btn,on,txt){btn.disabled=on;if(txt)btn.textContent=txt}
-function gateLogin(){const v=JSON.parse(localStorage.getItem('drg_vault'));
-  gate(`<h2>Iniciar sesión</h2><form id="gF" autocomplete="on"><div class="fld"><label>Usuario</label><input type="text" name="username" autocomplete="username" value="${esc(v.n)}" readonly></div>
-  <div class="fld"><label for="gP">Contraseña</label><input type="password" id="gP" autocomplete="current-password" required></div><div class="gerr" id="gE"></div>
-  <button class="btn pri wide" id="gB">Entrar</button></form><div class="glinks"><a href="#" id="gOther">Entrar con otro código de acceso</a></div>${installHint()}`);
-  setTimeout(()=>$('#gP').focus(),50);
-  $('#gF').onsubmit=async e=>{e.preventDefault();const b=$('#gB');busy(b,true,'Verificando…');gErr();try{const acc=await vaultOpen($('#gP').value);await unlock(acc)}catch(x){gErr('Contraseña incorrecta.');busy(b,false,'Entrar')}};
-  $('#gOther').onclick=e=>{e.preventDefault();gateCode(true)}}
-function gateCode(back){gate(`<h2>Primer ingreso</h2><p class="gp">Pegue el código de acceso que le entregó el administrador y cree su contraseña personal.</p>
-  <form id="gF"><div class="fld"><label for="gC">Código de acceso</label><textarea id="gC" rows="4" placeholder="DRGAPBB1.…" spellcheck="false" autocapitalize="off" autocorrect="off"></textarea></div>
-  <div class="fld"><label for="gP1">Cree su contraseña (mínimo 8 caracteres)</label><input type="password" id="gP1" autocomplete="new-password"></div>
-  <div class="fld"><label for="gP2">Repita la contraseña</label><input type="password" id="gP2" autocomplete="new-password"></div><div class="gerr" id="gE"></div>
-  <button class="btn pri wide" id="gB">Entrar</button></form>
-  <div class="glinks">${back?'<a href="#" id="gBack">← Volver a iniciar sesión</a>':''}<a href="#" id="gSetup">Configuración inicial del sistema (solo la primera vez)</a></div>${installHint()}`);
-  $('#gF').onsubmit=async e=>{e.preventDefault();gErr();let acc;try{acc=parseCode($('#gC').value)}catch(x){gErr(x.message);return}const p1=$('#gP1').value,p2=$('#gP2').value;
-    if(p1.length<8){gErr('La contraseña debe tener al menos 8 caracteres.');return}if(p1!==p2){gErr('Las contraseñas no coinciden.');return}
-    const b=$('#gB');busy(b,true,'Preparando…');try{const prev=localStorage.getItem('drg_vault');if(prev){const pv=JSON.parse(prev);if(pv.u!==acc.u){await IDB.clear()}}else{const pd=await IDB.get('pend');if(!pd||!pd.length)await IDB.clear()}await vaultSave(acc,p1);await unlock(acc,true)}catch(x){gErr(errMsg(x));busy(b,false,'Entrar')}};
-  if(back)$('#gBack').onclick=e=>{e.preventDefault();gateLogin()};$('#gSetup').onclick=e=>{e.preventDefault();gateSetup()}}
+const idBox=()=>`<div class="devbox"><div class="sm">ID de este teléfono</div><div class="devid">${devFmt(devId())}</div><div class="btnrow" style="justify-content:center"><button type="button" class="btn sec sm" id="gCopyId">Copiar ID</button><button type="button" class="btn acc sm" id="gWaId">Enviar mi ID por WhatsApp</button></div></div>`;
+function bindIdBox(){$('#gCopyId').onclick=()=>copiar(devFmt(devId()),'ID copiado');$('#gWaId').onclick=()=>abrirWA('Hola, ya instalé la app Control de Operaciones de Dragado APBB. El ID de mi teléfono es: '+devFmt(devId()))}
+async function activarCodigo(txt){let acc;try{acc=parseCode(txt)}catch(x){gErr(x.message);return}
+  if(acc.d&&acc.d!==devId()){gErr('Este código fue generado para otro teléfono. Envíe al administrador el ID que aparece arriba.');return}
+  if(!acc.d&&acc.r!=='admin'){gErr('Este código no está ligado a este teléfono. Pida un código nuevo al administrador enviándole su ID.');return}
+  const b=$('#gB');busy(b,true,'Activando…');
+  try{const prev=accLoad();if(prev&&(prev.u!==acc.u||prev.rk!==acc.rk))await IDB.clear();else if(!prev){const pd=await IDB.get('pend');if(!pd||!pd.length)await IDB.clear()}
+    accSave(acc);localStorage.removeItem('drg_vault');await unlock(acc,true);toast('Acceso activado','ok')}catch(x){gErr(errMsg(x));busy(b,false,'Activar')}}
+function gateActivar(){gate(`<h2>Activar acceso</h2><p class="gp">Para usar la App necesita un código del administrador. Envíele el ID de este teléfono y pegue aquí el código que le devuelva.</p>
+  ${idBox()}
+  <form id="gF"><div class="fld"><div style="display:flex;justify-content:space-between;align-items:center"><label for="gC">Código de acceso</label><button type="button" class="btn sec sm" id="gPeg">Pegar</button></div><textarea id="gC" rows="4" placeholder="DRGAPBB1.…" spellcheck="false" autocapitalize="off" autocorrect="off"></textarea></div>
+  <div class="gerr" id="gE"></div><button class="btn pri wide" id="gB">Activar</button></form>
+  ${installHint()}
+  <details class="gadm"><summary>Soy el administrador</summary><p class="gp" style="margin-top:8px">Si ya configuró el sistema, pegue arriba <b>su código de administrador</b> y toque <b>Activar</b>.</p><a href="#" id="gSetup">Configuración inicial del sistema (solo la primera vez)</a></details>`);
+  bindIdBox();$('#gPeg').onclick=()=>pegarEn('gC');
+  $('#gF').onsubmit=e=>{e.preventDefault();gErr();activarCodigo($('#gC').value)};
+  $('#gSetup').onclick=e=>{e.preventDefault();gateSetup()}}
+function gateMigrar(){const v=JSON.parse(localStorage.getItem('drg_vault'));
+  gate(`<h2>Última vez con contraseña</h2><p class="gp">La App ahora abre directamente, sin contraseña. Escríbala <b>una última vez</b> para conservar su acceso en este teléfono.</p>
+  <form id="gF"><div class="fld"><label>Usuario</label><input type="text" value="${esc(v.n)}" readonly></div>
+  <div class="fld"><label for="gP">Contraseña</label><input type="password" id="gP" autocomplete="current-password"></div><div class="gerr" id="gE"></div>
+  <button class="btn pri wide" id="gB">Continuar</button></form><div class="glinks"><a href="#" id="gOlv">Olvidé mi contraseña (usar mi código de administrador)</a></div>`);
+  $('#gF').onsubmit=async e=>{e.preventDefault();const b=$('#gB');busy(b,true,'Verificando…');gErr();try{const acc=await vaultOpen($('#gP').value);accSave(acc);localStorage.removeItem('drg_vault');await unlock(acc);toast('Listo: desde ahora la App abre directamente','ok')}catch(x){gErr('Contraseña incorrecta.');busy(b,false,'Continuar')}};
+  $('#gOlv').onclick=e=>{e.preventDefault();gateActivar()}}
 function gateSetup(){gate(`<h2>Configuración inicial</h2><p class="gp">Solo la realiza el administrador una vez. Necesita la llave de GitHub creada para el repositorio (vea la guía de instalación).</p>
   <form id="gF"><div class="fld"><label for="sN">Su nombre (administrador)</label><input type="text" id="sN" maxlength="80"></div>
   <div class="frow"><div class="fld"><label for="sO">Cuenta de GitHub</label><input type="text" id="sO" value="${DEF_REPO.o}" autocapitalize="off"></div><div class="fld"><label for="sR">Repositorio</label><input type="text" id="sR" value="${DEF_REPO.rp}" autocapitalize="off"></div></div>
-  <div class="fld"><label for="sT">Su llave de GitHub de administrador</label><input type="password" id="sT" placeholder="github_pat_…" autocapitalize="off" autocomplete="off"><a class="hint" href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Crear llave en GitHub →</a></div>
-  <div class="fld"><label for="gP1">Cree su contraseña (mínimo 8 caracteres)</label><input type="password" id="gP1" autocomplete="new-password"></div>
-  <div class="fld"><label for="gP2">Repita la contraseña</label><input type="password" id="gP2" autocomplete="new-password"></div><div class="gerr" id="gE"></div>
+  <div class="fld"><div style="display:flex;justify-content:space-between;align-items:center"><label for="sT">Su llave de GitHub de administrador</label><button type="button" class="btn sec sm" id="sTP">Pegar</button></div><input type="password" id="sT" placeholder="github_pat_…" autocapitalize="off" autocomplete="off"><a class="hint" href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Crear llave en GitHub →</a></div>
+  <div class="gerr" id="gE"></div>
   <button class="btn pri wide" id="gB">Configurar sistema</button></form><div class="glinks"><a href="#" id="gBack">← Tengo un código de acceso</a></div>`);
-  $('#gBack').onclick=e=>{e.preventDefault();gateCode(!!localStorage.getItem('drg_vault'))};
-  $('#gF').onsubmit=async e=>{e.preventDefault();gErr();const n=$('#sN').value.trim(),o=$('#sO').value.trim(),rp=$('#sR').value.trim(),t=$('#sT').value.trim(),p1=$('#gP1').value,p2=$('#gP2').value;
-    if(n.length<3)return gErr('Escriba su nombre.');if(!o||!rp)return gErr('Indique la cuenta y el repositorio.');if(t.length<20)return gErr('Pegue la llave de GitHub completa.');if(p1.length<8)return gErr('La contraseña debe tener al menos 8 caracteres.');if(p1!==p2)return gErr('Las contraseñas no coinciden.');
+  $('#sTP').onclick=()=>pegarEn('sT');
+  $('#gBack').onclick=e=>{e.preventDefault();gateActivar()};
+  $('#gF').onsubmit=async e=>{e.preventDefault();gErr();const n=$('#sN').value.trim(),o=$('#sO').value.trim(),rp=$('#sR').value.trim(),t=$('#sT').value.trim();
+    if(n.length<3)return gErr('Escriba su nombre.');if(!o||!rp)return gErr('Indique la cuenta y el repositorio.');if(t.length<20)return gErr('Pegue la llave de GitHub completa.');
     const b=$('#gB');busy(b,true,'Verificando GitHub…');
     try{const tmp={o,rp,t};const repo=await ghReq(tmp,'');if(repo&&repo.has_issues===false){const x=new Error();x.status=410;throw x}
       const l=await ghReq(tmp,'/issues?state=all&per_page=100');if(l.some(it=>/^DRG/.test(it.title||''))){gErr('Este repositorio ya tiene datos del sistema. Entre con su código de administrador.');busy(b,false,'Configurar sistema');return}
       busy(b,true,'Creando llaves de seguridad…');const root=await genPair();const dk=b64u(crypto.getRandomValues(new Uint8Array(32)));const u=rid('u_');
-      const acc={v:1,u,n,r:'admin',sk:root.priv,kid:'root',rk:root.pub,dk,t,o,rp};await IDB.clear();await vaultSave(acc,p1);await unlock(acc,true,true);
+      const acc={v:1,u,n,r:'admin',sk:root.priv,kid:'root',rk:root.pub,dk,t,o,rp};await IDB.clear();accSave(acc);localStorage.removeItem('drg_vault');await unlock(acc,true,true);
       await saveRecord('usuario',u,'set',{nombre:n,rol:'admin',activo:true,pub:root.pub});
       await saveRecord('draga','rama','set',{nombre:'Rama',modelo:'Damen CSD 350',caracteristicas:'Draga de succión con cortador (Cutter Suction Dredger).',activa:true,orden:1});
       await saveRecord('draga','rama-kay','set',{nombre:'Rama Kay',modelo:'Damen CSD 350',caracteristicas:'Draga de succión con cortador (Cutter Suction Dredger).',activa:true,orden:2});
@@ -1022,11 +1063,7 @@ async function unlock(acc,fresh,setup){S.acc=acc;S.uid=acc.u;S.isAdmin=acc.r==='
   clearInterval(syncTimer);syncTimer=setInterval(()=>{if(!document.hidden)sync()},60000)}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S.acc)sync()});
 window.addEventListener('online',()=>{if(S.acc)sync()});
-$('#lockBtn').onclick=e=>{e.preventDefault();location.reload()};
-$('#pwBtn').onclick=e=>{e.preventDefault();closeSide();openModal('Cambiar contraseña',`<div class="formgrid" style="grid-template-columns:1fr"><div class="fld" data-f="pa"><label>Contraseña actual</label><input type="password" id="pA" autocomplete="current-password"><span class="emsg"></span></div><div class="fld" data-f="pn"><label>Nueva contraseña (mínimo 8)</label><input type="password" id="pN" autocomplete="new-password"><span class="emsg"></span></div><div class="fld" data-f="pr"><label>Repita la nueva</label><input type="password" id="pR" autocomplete="new-password"><span class="emsg"></span></div></div>`,
-  [{t:'Cancelar',c:'sec'},{t:'Guardar',c:'pri',fn:async()=>{['pa','pn','pr'].forEach(f=>setErr(f,''));try{await vaultOpen($('#pA').value)}catch(x){setErr('pa','Contraseña incorrecta.');return false}
-    if($('#pN').value.length<8){setErr('pn','Mínimo 8 caracteres.');return false}if($('#pN').value!==$('#pR').value){setErr('pr','No coinciden.');return false}await vaultSave(S.acc,$('#pN').value);toast('Contraseña actualizada','ok')}}])};
-$('#wipeBtn').onclick=e=>{e.preventDefault();closeSide();confirmar('Quitar mi acceso de este dispositivo','Se borrarán de este dispositivo su acceso y la copia local de los datos (los datos siguen guardados en GitHub). Para volver a entrar necesitará un código de acceso.','Quitar acceso',async()=>{localStorage.removeItem('drg_vault');await IDB.clear();location.reload()})};
+$('#wipeBtn').onclick=e=>{e.preventDefault();closeSide();confirmar('Quitar mi acceso de este dispositivo','Se borrarán de este dispositivo su acceso y la copia local de los datos (los datos siguen guardados en GitHub). Para volver a entrar necesitará un código de acceso.','Quitar acceso',async()=>{localStorage.removeItem('drg_vault');localStorage.removeItem('drg_acc');await IDB.clear();location.reload()})};
 function registerSW(){try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
   if(!('serviceWorker' in navigator)||!(location.protocol==='https:'||location.hostname==='localhost'))return;
   navigator.serviceWorker.register('sw.js').then(reg=>{const show=()=>$('#updBanner').classList.remove('hidden');if(reg.waiting&&navigator.serviceWorker.controller)show();
@@ -1034,9 +1071,10 @@ function registerSW(){try{navigator.storage&&navigator.storage.persist&&navigato
     $('#updBtn').onclick=()=>{S.updating=true;if(reg.waiting)reg.waiting.postMessage('skip');else location.reload()};
     setInterval(()=>{if(navigator.onLine)reg.update().catch(()=>{})},3600000)}).catch(()=>{});
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(S.updating)location.reload()})}
-function init(){registerSW();$('#sideInst').innerHTML=installHint();$('#verTxt').textContent='Versión '+APP_VER;
+function init(){registerSW();$('#sideInst').innerHTML=installHint();$('#verTxt').innerHTML='ID de este teléfono: <b>'+devFmt(devId())+'</b><br>Versión '+APP_VER;
   if(!window.crypto||!crypto.subtle){fatal('Este navegador no es compatible. Abra la App desde la dirección segura (https).');return}
-  if(localStorage.getItem('drg_vault'))gateLogin();else gateCode(false)}
+  const acc=accLoad();if(acc&&acc.u&&acc.dk){unlock(acc).catch(e=>{console.error(e);gateActivar()});return}
+  if(localStorage.getItem('drg_vault'))gateMigrar();else gateActivar()}
 init();
 </script>
 </body>
